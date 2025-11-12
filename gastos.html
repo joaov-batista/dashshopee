@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="pt-br" class="dark-mode">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lançamentos de Gastos</title>
+    <link rel="icon" type="image/png" href="favicon.png"> 
+    
+    <style>
+        :root {
+            --cor-primaria: #ee4d2d;
+            --cor-verde: #00bfa5;
+            --cor-vermelho: #ef5350;
+            --cor-azul: #2979ff;
+            --cor-fundo: #f4f7f6;
+            --cor-texto: #333;
+            --cor-texto-claro: #666;
+            --cor-branco: #ffffff;
+            --sombra: 0 4px 12px rgba(0,0,0,0.05);
+            --border-color: #f0f0f0;
+            --input-bg: #fcfcfc;
+        }
+
+        /* === TEMA ESCURO === */
+        html.dark-mode {
+            --cor-fundo: #121212;
+            --cor-branco: #1E1E1E;
+            --cor-texto: #E0E0E0;
+            --cor-texto-claro: #888;
+            --sombra: 0 4px 12px rgba(0,0,0,0.3);
+            --border-color: #333;
+            --input-bg: #2C2C2C;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--cor-fundo);
+            color: var(--cor-texto);
+            margin: 0;
+            padding: 20px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        #app-content { display: none; }
+        
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--cor-branco);
+            padding: 10px 25px;
+            border-radius: 12px;
+            box-shadow: var(--sombra);
+            margin-bottom: 20px;
+        }
+        .navbar h1 { color: var(--cor-primaria); margin: 0; font-size: 1.6em; }
+        .navbar .nav-links { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .navbar .nav-links a {
+            text-decoration: none;
+            color: var(--cor-texto-claro);
+            font-weight: 600;
+            font-size: 0.95em;
+            transition: color 0.2s;
+        }
+        .navbar .nav-links a:hover, .navbar .nav-links a.active {
+            color: var(--cor-azul);
+        }
+        .navbar button.logout-btn {
+            background-color: var(--cor-vermelho);
+            color: white; border: none; padding: 8px 14px;
+            border-radius: 8px; cursor: pointer; font-weight: 600;
+        }
+
+        /* Botão de Tema */
+        .icon-btn {
+            background: none;
+            border: none;
+            color: var(--cor-texto-claro);
+            font-size: 22px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        html.dark-mode .theme-toggle-btn {
+            color: var(--cor-amarelo);
+        }
+        
+        /* Filtro */
+        .filter-bar {
+            display: flex; flex-wrap: wrap; gap: 15px;
+            background-color: var(--cor-branco);
+            padding: 15px 20px; border-radius: 12px;
+            margin-bottom: 20px; box-shadow: var(--sombra);
+            align-items: center;
+        }
+        .filter-bar label { font-weight: 600; color: var(--cor-texto-claro); }
+        .filter-bar select {
+            padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);
+            font-size: 1em; background-color: var(--input-bg);
+            color: var(--cor-texto);
+        }
+
+        .table-container {
+            background-color: var(--cor-branco);
+            border-radius: 12px;
+            box-shadow: var(--sombra);
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 14px 18px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        th {
+            background-color: #fcfcfc;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            color: var(--cor-texto-claro);
+        }
+        html.dark-mode th {
+            background-color: #252525;
+        }
+        tbody tr {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        tbody tr:hover {
+            background-color: #f8f8f8;
+        }
+        html.dark-mode tbody tr:hover {
+            background-color: #2a2a2a;
+        }
+        .valor-gasto { color: var(--cor-vermelho); font-weight: 600; }
+        .edited-icon {
+            font-size: 0.8em;
+            color: var(--cor-texto-claro);
+            opacity: 0.7;
+            margin-left: 5px;
+        }
+
+        /* Modal de Edição */
+        .modal {
+            display: none; 
+            position: fixed; z-index: 1000;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .modal-content {
+            background-color: var(--cor-branco);
+            color: var(--cor-texto);
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .modal-header h3 { margin: 0; font-size: 1.5em; }
+        .modal-header .close-btn {
+            font-size: 2.5em; font-weight: bold; color: #aaa;
+            cursor: pointer; line-height: 0.5;
+        }
+        
+        .modal-body form label {
+            display: block; margin-top: 15px; font-weight: 600; font-size: 0.9em;
+            color: var(--cor-texto-claro);
+        }
+        .modal-body form input, .modal-body form select {
+            width: 100%; padding: 12px; margin-top: 5px;
+            border: 1px solid var(--border-color);
+            background-color: var(--input-bg);
+            color: var(--cor-texto);
+            border-radius: 8px; box-sizing: border-box; 
+            font-size: 1em;
+        }
+        
+        .modal-footer {
+            margin-top: 25px;
+            display: flex;
+            justify-content: space-between; 
+            gap: 10px;
+        }
+        .modal-footer button {
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.95em;
+        }
+        #modal-delete-btn { background-color: var(--cor-vermelho); color: white; }
+        #modal-save-btn { background-color: var(--cor-verde); color: white; }
+
+        /* Feedback Modal */
+        #feedback-modal .modal-content { max-width: 350px; text-align: center; }
+        #feedback-modal .icon { font-size: 3.5em; }
+        #feedback-modal .success { color: var(--cor-verde); }
+        #feedback-modal .error { color: var(--cor-vermelho); }
+        #feedback-modal p { font-size: 1.2em; font-weight: 600; margin: 10px 0 0; }
+        
+        @media (max-width: 600px) {
+            .filter-bar { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-content">
+        <nav class="navbar">
+            <h1>Lançamentos</h1>
+            <div class="nav-links">
+                <a href="index.html">Dashboard</a>
+                <a href="vendas.html">Lançamentos de Vendas</a>
+                <a href="gastos.html" class="active"><b>Lançamentos de Gastos</b></a>
+                <a href="produtos.html">Gerenciar Produtos</a>
+                <button class="icon-btn theme-toggle-btn" id="theme-toggle" title="Mudar tema">☀️</button>
+                <button id="logout-btn" class="logout-btn">Sair</button>
+            </div>
+        </nav>
+        
+        <div class="filter-bar">
+            <label for="filter-month">Mês:</label>
+            <select id="filter-month"></select>
+            <label for="filter-year">Ano:</label>
+            <select id="filter-year"></select>
+            <label for="filter-category">Categoria:</label>
+            <select id="filter-category"></select>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Descrição</th>
+                        <th>Categoria</th>
+                        <th>Valor</th>
+                    </tr>
+                </thead>
+                <tbody id="details-table-body">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="details-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Editar Gasto</h3>
+                <span class="close-btn">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="edit-form">
+                    <input type="hidden" id="edit-id">
+                    
+                    <label for="edit-data">Data do Gasto:</label>
+                    <input type="date" id="edit-data" required>
+                    
+                    <label for="edit-descricao">Descrição:</label>
+                    <input type="text" id="edit-descricao" required>
+                    
+                    <label for="edit-categoria">Categoria:</label>
+                    <select id="edit-categoria" required>
+                        <option value="material">Material</option>
+                        <option value="ads">Anúncios (Ads)</option>
+                        <option value="salario-joao">Salário (João)</option>
+                        <option value="salario-fabrizio">Salário (Fabrizio)</option>
+                        <option value="embalagem">Embalagem</option>
+                        <option value="outros">Outros</option>
+                    </select>
+
+                    <label for="edit-valor">Valor (R$):</label>
+                    <input type="number" id="edit-valor" step="0.01" required>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="modal-delete-btn">Excluir Gasto</button>
+                <button id="modal-save-btn">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="feedback-modal" class="modal">
+        <div class="modal-content">
+            <div id="feedback-icon" class="icon"></div>
+            <p id="feedback-message"></p>
+        </div>
+    </div>
+
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+        import { 
+            getFirestore, collection, onSnapshot, 
+            query, orderBy, doc, deleteDoc, updateDoc,
+            where, Timestamp, serverTimestamp, setDoc
+        } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+
+        // SUA CONFIGURAÇÃO (NÃO MUDE)
+        const firebaseConfig = {
+          apiKey: "AIzaSyCKtzcbDA5y0mGqo2UdYdinf44adGEhnPA",
+          authDomain: "dashboard-shopee.firebaseapp.com",
+          projectId: "dashboard-shopee",
+          storageBucket: "dashboard-shopee.firebasestorage.app",
+          messagingSenderId: "221610244041",
+          appId: "1:221610244041:web:dcd4f817ea3f76ff029a18"
+        };
+        
+        // Inicialização
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- Variáveis Globais ---
+        let currentUserId = null;
+        let localGastosCache = [];
+        let unsubscribeGastos = null;
+        const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
+        // MUDANÇA 2: Constante com as categorias
+        const categoriasGastos = {
+            "material": "Material",
+            "ads": "Anúncios (Ads)",
+            "salario-joao": "Salário (João)",
+            "salario-fabrizio": "Salário (Fabrizio)",
+            "embalagem": "Embalagem",
+            "outros": "Outros"
+        };
+
+        // --- Elementos da UI ---
+        const appContent = document.getElementById("app-content");
+        const tableBody = document.getElementById("details-table-body");
+        const detailsModal = document.getElementById("details-modal");
+        const modalDeleteBtn = document.getElementById("modal-delete-btn");
+        const modalSaveBtn = document.getElementById("modal-save-btn");
+        const filterMonth = document.getElementById("filter-month");
+        const filterYear = document.getElementById("filter-year");
+        const filterCategory = document.getElementById("filter-category"); // MUDANÇA 3: Novo elemento
+
+        // --- Lógica de UI (Feedback) ---
+        const feedbackModal = document.getElementById("feedback-modal");
+        const feedbackIcon = document.getElementById("feedback-icon");
+        const feedbackMessage = document.getElementById("feedback-message");
+
+        function showFeedback(message, type = 'success', duration = 2000) {
+            feedbackMessage.textContent = message;
+            feedbackIcon.className = `icon ${type}`;
+            feedbackIcon.innerHTML = type === 'success' ? "✅" : "❌";
+            feedbackModal.style.display = "flex";
+            setTimeout(() => { feedbackModal.style.display = "none"; }, duration);
+        }
+
+        // --- Lógica de Formatação ---
+        function formatarMoeda(valor) {
+            return (valor || 0).toLocaleString('pt-br', { style: 'currency', currency: 'BRL' });
+        }
+        function formatarData(timestamp) {
+            if (!timestamp) return 'N/A';
+            return timestamp.toDate().toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+        }
+        function timestampParaInputDate(timestamp) {
+            const date = timestamp.toDate();
+            const dateUTC = new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+            return dateUTC.toISOString().split('T')[0];
+        }
+        function inputDateParaTimestamp(dateString) {
+            const dataObj = new Date(dateString);
+            const dataUtc = new Date(dataObj.getTime() + dataObj.getTimezoneOffset() * 60000);
+            return Timestamp.fromDate(dataUtc);
+        }
+
+        // --- Lógica de UI (Filtros) ---
+        function popularFiltros() {
+            const hoje = new Date();
+            const mesAtual = hoje.getMonth();
+            const anoAtual = hoje.getFullYear();
+            
+            filterMonth.add(new Option("Todos os Meses", "all"));
+            meses.forEach((mes, index) => {
+                const option = new Option(mes, index);
+                if(index === mesAtual) option.selected = true;
+                filterMonth.add(option);
+            });
+            
+            for (let ano = anoAtual + 1; ano >= 2020; ano--) {
+                const option = new Option(ano, ano);
+                if(ano === anoAtual) option.selected = true;
+                filterYear.add(option);
+            }
+
+            // MUDANÇA 4: Popular filtro de categoria
+            filterCategory.add(new Option("Todas as Categorias", "all"));
+            for (const [valor, nome] of Object.entries(categoriasGastos)) {
+                filterCategory.add(new Option(nome, valor));
+            }
+            
+            filterMonth.addEventListener("change", carregarTodosOsGastos);
+            filterYear.addEventListener("change", carregarTodosOsGastos);
+            filterCategory.addEventListener("change", aplicarFiltrosEExibirGastos); // MUDANÇA 5: Listener
+        }
+
+        // --- Lógica de Autenticação (Auth Guard) ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                appContent.style.display = "block";
+                popularFiltros();
+                carregarTodosOsGastos();
+            } else {
+                window.location.href = "./login.html"; 
+            }
+        });
+
+        // --- Lógica de Logout ---
+        document.getElementById("logout-btn").addEventListener("click", () => signOut(auth));
+        
+        // --- Lógica Principal de Dados ---
+        function carregarTodosOsGastos() {
+            if (unsubscribeGastos) unsubscribeGastos();
+
+            const mes = filterMonth.value;
+            const ano = parseInt(filterYear.value);
+            const gastosRef = collection(db, "usuarios", currentUserId, "gastos");
+            let qGastos;
+
+            if (mes === "all") {
+                const inicioDoAno = Timestamp.fromDate(new Date(ano, 0, 1));
+                const fimDoAno = Timestamp.fromDate(new Date(ano, 11, 31, 23, 59, 59));
+                qGastos = query(gastosRef,
+                    where("data", ">=", inicioDoAno),
+                    where("data", "<=", fimDoAno),
+                    orderBy("data", "desc")
+                );
+            } else {
+                const mesInt = parseInt(mes);
+                const inicioDoMes = Timestamp.fromDate(new Date(ano, mesInt, 1));
+                const fimDoMes = Timestamp.fromDate(new Date(ano, mesInt + 1, 0, 23, 59, 59));
+                qGastos = query(gastosRef,
+                    where("data", ">=", inicioDoMes),
+                    where("data", "<=", fimDoMes),
+                    orderBy("data", "desc")
+                );
+            }
+
+            unsubscribeGastos = onSnapshot(qGastos, (snapshot) => {
+                localGastosCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                aplicarFiltrosEExibirGastos(); // MUDANÇA 6: Chamar filtro
+            });
+        }
+
+        // MUDANÇA 7: Nova função para filtrar e renderizar
+        function aplicarFiltrosEExibirGastos() {
+            const categoria = filterCategory.value;
+            let gastosFiltrados = [...localGastosCache];
+
+            if (categoria !== "all") {
+                gastosFiltrados = gastosFiltrados.filter(gasto => gasto.categoria === categoria);
+            }
+
+            renderizarTabela(gastosFiltrados);
+        }
+
+
+        function renderizarTabela(gastos) {
+            tableBody.innerHTML = "";
+            
+            if (gastos.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 20px; color: ${document.documentElement.classList.contains('dark-mode') ? '#888' : '#999'};">Nenhum gasto encontrado.</td></tr>`;
+                return;
+            }
+
+            gastos.forEach(item => {
+                const tr = document.createElement("tr");
+                tr.dataset.id = item.id;
+                
+                const iconeEditado = item.editadoEm ? ` <span class="edited-icon" title="Editado em ${formatarData(item.editadoEm)}">✏️</span>` : '';
+                
+                // MUDANÇA 8: Usar o nome amigável da categoria
+                const nomeCategoria = categoriasGastos[item.categoria] || item.categoria || 'N/A';
+
+                tr.innerHTML = `
+                    <td>${formatarData(item.data)}${iconeEditado}</td>
+                    <td>${item.descricao || '---'}</td>
+                    <td>${nomeCategoria}</td> 
+                    <td class="valor-gasto">- ${formatarMoeda(item.valor)}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        // --- Lógica do Modal de Edição ---
+        tableBody.addEventListener("click", (e) => {
+            const row = e.target.closest("tr");
+            if (!row || !row.dataset.id) return;
+            
+            const id = row.dataset.id;
+            const item = localGastosCache.find(t => t.id === id);
+            
+            if (!item) return;
+            
+            // Preenche o formulário de edição
+            document.getElementById("edit-id").value = item.id;
+            document.getElementById("edit-data").value = timestampParaInputDate(item.data);
+            document.getElementById("edit-descricao").value = item.descricao || "";
+            document.getElementById("edit-categoria").value = item.categoria || "outros";
+            document.getElementById("edit-valor").value = item.valor;
+            
+            modalDeleteBtn.dataset.id = item.id;
+            detailsModal.style.display = "flex";
+        });
+
+        function fecharModal() {
+            detailsModal.style.display = "none";
+        }
+        document.querySelector("#details-modal .close-btn").addEventListener("click", fecharModal);
+        window.addEventListener("click", (e) => {
+            if (e.target === detailsModal) {
+                fecharModal();
+            }
+        });
+
+        // Salvar Edições
+        modalSaveBtn.addEventListener("click", async () => {
+            const id = document.getElementById("edit-id").value;
+            const docRef = doc(db, "usuarios", currentUserId, "gastos", id);
+            
+            const dadosAtualizados = {
+                data: inputDateParaTimestamp(document.getElementById("edit-data").value),
+                descricao: document.getElementById("edit-descricao").value,
+                categoria: document.getElementById("edit-categoria").value,
+                valor: parseFloat(document.getElementById("edit-valor").value),
+                editadoEm: serverTimestamp() 
+            };
+
+            try {
+                await updateDoc(docRef, dadosAtualizados);
+                fecharModal();
+                showFeedback("Gasto atualizado com sucesso!", "success");
+            } catch (error) {
+                console.error("Erro ao atualizar:", error);
+                showFeedback("Erro ao atualizar.", "error");
+            }
+        });
+
+        // Excluir
+        modalDeleteBtn.addEventListener("click", async (e) => {
+            const id = e.target.dataset.id;
+            
+            if (confirm("Tem certeza que deseja excluir este gasto? Esta ação é irreversível.")) {
+                try {
+                    const docRef = doc(db, "usuarios", currentUserId, "gastos", id);
+                    await deleteDoc(docRef);
+                    fecharModal();
+                    showFeedback("Gasto excluído!", "success");
+                } catch (error) {
+                    showFeedback("Erro ao excluir.", "error");
+                }
+            }
+        });
+        
+        // --- Lógica de UI (Theme Toggle) ---
+        const themeToggle = document.getElementById("theme-toggle");
+        
+        function setIcon(theme) {
+             if (theme === 'dark') {
+                themeToggle.innerHTML = "☀️"; // Sol
+             } else {
+                themeToggle.innerHTML = "🌙"; // Lua
+             }
+        }
+        setIcon('dark'); 
+
+        themeToggle.addEventListener("click", () => {
+            const isDarkMode = document.documentElement.classList.toggle("dark-mode");
+            const theme = isDarkMode ? "dark" : "light";
+            localStorage.setItem("theme", theme);
+            setIcon(theme);
+        });
+
+    </script>
+</body>
+</html>

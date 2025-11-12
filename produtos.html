@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="pt-br" class="dark-mode">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciar Produtos</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <style>
+        :root {
+            --cor-primaria: #ee4d2d;
+            --cor-verde: #00bfa5;
+            --cor-vermelho: #ef5350;
+            --cor-azul: #2979ff;
+            --cor-fundo: #f4f7f6;
+            --cor-texto: #333;
+            --cor-texto-claro: #666;
+            --cor-branco: #ffffff;
+            --sombra: 0 4px 12px rgba(0,0,0,0.05);
+            --border-color: #f0f0f0;
+            --input-bg: #fcfcfc;
+        }
+
+        /* === TEMA ESCURO === */
+        html.dark-mode {
+            --cor-fundo: #121212;
+            --cor-branco: #1E1E1E;
+            --cor-texto: #E0E0E0;
+            --cor-texto-claro: #888;
+            --sombra: 0 4px 12px rgba(0,0,0,0.3);
+            --border-color: #333;
+            --input-bg: #2C2C2C;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--cor-fundo);
+            color: var(--cor-texto);
+            margin: 0;
+            padding: 20px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        #app-content { display: none; }
+        
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--cor-branco);
+            padding: 10px 25px;
+            border-radius: 12px;
+            box-shadow: var(--sombra);
+            margin-bottom: 20px;
+        }
+        .navbar h1 { color: var(--cor-primaria); margin: 0; font-size: 1.6em; }
+        .navbar .nav-links { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .navbar .nav-links a {
+            text-decoration: none;
+            color: var(--cor-texto-claro);
+            font-weight: 600;
+            font-size: 0.95em;
+            transition: color 0.2s;
+        }
+        .navbar .nav-links a:hover, .navbar .nav-links a.active {
+            color: var(--cor-azul);
+        }
+        .navbar button.logout-btn {
+            background-color: var(--cor-vermelho);
+            color: white; border: none; padding: 8px 14px;
+            border-radius: 8px; cursor: pointer; font-weight: 600;
+        }
+
+        /* Botão de Tema */
+        .icon-btn {
+            background: none;
+            border: none;
+            color: var(--cor-texto-claro);
+            font-size: 22px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        html.dark-mode .theme-toggle-btn {
+            color: var(--cor-amarelo);
+        }
+        
+        /* Layout */
+        .page-layout {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+        }
+        .card {
+            background-color: var(--cor-branco);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: var(--sombra);
+        }
+        .card h2 {
+            margin-top: 0; color: var(--cor-texto);
+            border-bottom: 2px solid var(--border-color); padding-bottom: 10px;
+        }
+        
+        /* Formulário de Novo Produto */
+        form label {
+            display: block; margin-top: 15px; font-weight: 600; font-size: 0.9em;
+            color: var(--cor-texto-claro);
+        }
+        form input {
+            width: 100%; padding: 12px; margin-top: 5px;
+            border: 1px solid var(--border-color);
+            background-color: var(--input-bg);
+            color: var(--cor-texto);
+            border-radius: 8px; box-sizing: border-box; 
+            font-size: 1em;
+        }
+        form button {
+            width: 100%; padding: 14px; color: white; border: none;
+            cursor: pointer; margin-top: 25px; border-radius: 8px; 
+            font-weight: bold; font-size: 1.1em;
+            transition: all 0.3s ease;
+            background-color: var(--cor-azul);
+        }
+        
+        /* Simulador de Lucro */
+        .price-calculator {
+            background-color: var(--cor-fundo);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .price-calculator p {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 0.9em;
+        }
+        .price-calculator p span {
+            color: var(--cor-texto-claro);
+        }
+        .price-calculator p strong {
+            font-weight: 600;
+        }
+        .price-calculator .lucro-final {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: var(--cor-verde);
+            text-align: center;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px dashed var(--border-color);
+        }
+
+        /* Tabela de Produtos */
+        .table-container {
+            background-color: var(--cor-branco);
+            border-radius: 12px;
+            box-shadow: var(--sombra);
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 14px 18px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        th {
+            background-color: #fcfcfc;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            color: var(--cor-texto-claro);
+        }
+        html.dark-mode th {
+            background-color: #252525;
+        }
+        tbody tr {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        tbody tr:hover {
+            background-color: #f8f8f8;
+        }
+        html.dark-mode tbody tr:hover {
+            background-color: #2a2a2a;
+        }
+        .valor-venda { color: var(--cor-verde); font-weight: 600; }
+        .valor-custo { color: var(--cor-vermelho); font-weight: 600; }
+        .valor-lucro { color: var(--cor-azul); font-weight: 600; }
+
+        /* Modal de Edição */
+        .modal {
+            display: none; 
+            position: fixed; z-index: 1000;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .modal-content {
+            background-color: var(--cor-branco);
+            color: var(--cor-texto);
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .modal-header h3 { margin: 0; font-size: 1.5em; }
+        .modal-header .close-btn {
+            font-size: 2.5em; font-weight: bold; color: #aaa;
+            cursor: pointer; line-height: 0.5;
+        }
+        
+        .modal-footer {
+            margin-top: 25px;
+            display: flex;
+            justify-content: space-between; /* Botões separados */
+            gap: 10px;
+        }
+        .modal-footer button {
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.95em;
+        }
+        #modal-delete-btn { background-color: var(--cor-vermelho); color: white; }
+        #modal-save-btn { background-color: var(--cor-verde); color: white; }
+
+        /* Feedback Modal */
+        #feedback-modal .modal-content { max-width: 350px; text-align: center; }
+        #feedback-modal .icon { font-size: 3.5em; }
+        #feedback-modal .success { color: var(--cor-verde); }
+        #feedback-modal .error { color: var(--cor-vermelho); }
+        #feedback-modal p { font-size: 1.2em; font-weight: 600; margin: 10px 0 0; }
+        
+        @media (max-width: 900px) {
+            .page-layout { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-content">
+        <nav class="navbar">
+            <h1>Lançamentos</h1>
+            <div class="nav-links">
+                <a href="index.html">Dashboard</a>
+                <a href="vendas.html">Lançamentos de Vendas</a>
+                <a href="gastos.html">Lançamentos de Gastos</a>
+                <a href="produtos.html" class="active"><b>Gerenciar Produtos</b></a>
+                <button class="icon-btn theme-toggle-btn" id="theme-toggle" title="Mudar tema">☀️</button>
+                <button id="logout-btn" class="logout-btn">Sair</button>
+            </div>
+        </nav>
+        
+        <div class="page-layout">
+            <div class="sidebar">
+                <div class="card">
+                    <h2>Novo Produto</h2>
+                    <form id="form-produto">
+                        <label for="produto-nome">Nome do Produto:</label>
+                        <input type="text" id="produto-nome" required placeholder="Ex: Camiseta Branca P">
+                        
+                        <label for="produto-preco-venda">Preço de Venda (R$):</label>
+                        <input type="number" id="produto-preco-venda" step="0.01" required placeholder="Ex: 16.99">
+                        
+                        <label for="produto-taxa">Taxa Shopee Padrão (R$):</label>
+                        <input type="number" id="produto-taxa" step="0.01" required placeholder="Ex: 7.20">
+                        
+                        <div class="price-calculator">
+                            <p class="lucro-final" id="simulador-lucro-final">Lucro (Venda - Taxa): R$ 0,00</p>
+                        </div>
+
+                        <button type="submit">Salvar Produto</button>
+                    </form>
+                </div>
+            </div>
+            <div class="main-column">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Preço de Venda</th>
+                                <th>Taxa Padrão</th> <th>Lucro Estimado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="details-table-body">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="details-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Editar Produto</h3>
+                <span class="close-btn">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="edit-form">
+                    <input type="hidden" id="edit-id">
+                    
+                    <label for="edit-produto-nome">Nome do Produto:</label>
+                    <input type="text" id="edit-produto-nome" required>
+                    
+                    <label for="edit-produto-preco-venda">Preço de Venda (R$):</label>
+                    <input type="number" id="edit-produto-preco-venda" step="0.01" required>
+
+                    <label for="edit-produto-taxa">Taxa Shopee Padrão (R$):</label>
+                    <input type="number" id="edit-produto-taxa" step="0.01" required>
+                    
+                    <div class="price-calculator">
+                        <p class="lucro-final" id="edit-simulador-lucro-final">Lucro (Venda - Taxa): R$ 0,00</p>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="modal-delete-btn">Excluir Produto</button>
+                <button id="modal-save-btn">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="feedback-modal" class="modal">
+        <div class="modal-content">
+            <div id="feedback-icon" class="icon"></div>
+            <p id="feedback-message"></p>
+        </div>
+    </div>
+
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+        import { 
+            getFirestore, collection, onSnapshot, 
+            query, orderBy, doc, deleteDoc, updateDoc,
+            addDoc, serverTimestamp, setDoc
+        } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+
+        // SUA CONFIGURAÇÃO (NÃO MUDE)
+        const firebaseConfig = {
+          apiKey: "AIzaSyCKtzcbDA5y0mGqo2UdYdinf44adGEhnPA",
+          authDomain: "dashboard-shopee.firebaseapp.com",
+          projectId: "dashboard-shopee",
+          storageBucket: "dashboard-shopee.firebasestorage.app",
+          messagingSenderId: "221610244041",
+          appId: "1:221610244041:web:dcd4f817ea3f76ff029a18"
+        };
+        
+        // Inicialização
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- Variáveis Globais ---
+        let currentUserId = null;
+        let localProdutosCache = [];
+        let unsubscribeProdutos = null;
+
+        // --- Elementos da UI ---
+        const appContent = document.getElementById("app-content");
+        const tableBody = document.getElementById("details-table-body");
+        const detailsModal = document.getElementById("details-modal");
+        const modalDeleteBtn = document.getElementById("modal-delete-btn");
+        const modalSaveBtn = document.getElementById("modal-save-btn");
+        const formProduto = document.getElementById("form-produto");
+        
+        // --- Elementos do Simulador (Novo Produto) ---
+        const inputPrecoVenda = document.getElementById("produto-preco-venda");
+        const inputTaxa = document.getElementById("produto-taxa"); // MUDANÇA 5: ID atualizado
+        const simuladorLucroFinal = document.getElementById("simulador-lucro-final");
+        
+        // --- Elementos do Simulador (Editar Produto) ---
+        const editInputPrecoVenda = document.getElementById("edit-produto-preco-venda");
+        const editInputTaxa = document.getElementById("edit-produto-taxa"); // MUDANÇA 6: ID atualizado
+        const editSimuladorLucroFinal = document.getElementById("edit-simulador-lucro-final");
+        
+        // --- Lógica de UI (Feedback) ---
+        const feedbackModal = document.getElementById("feedback-modal");
+        const feedbackIcon = document.getElementById("feedback-icon");
+        const feedbackMessage = document.getElementById("feedback-message");
+
+        function showFeedback(message, type = 'success', duration = 2000) {
+            feedbackMessage.textContent = message;
+            feedbackIcon.className = `icon ${type}`;
+            feedbackIcon.innerHTML = type === 'success' ? "✅" : "❌";
+            feedbackModal.style.display = "flex";
+            setTimeout(() => { feedbackModal.style.display = "none"; }, duration);
+        }
+
+        // --- Lógica de Formatação ---
+        function formatarMoeda(valor) {
+            return (valor || 0).toLocaleString('pt-br', { style: 'currency', currency: 'BRL' });
+        }
+        function formatarData(timestamp) {
+            if (!timestamp) return 'N/A';
+            return timestamp.toDate().toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+        }
+        
+        // --- Lógica do Simulador de Lucro ---
+        // MUDANÇA 7: Lógica do simulador atualizada
+        function calcularLucroSimulado(preco, taxa) {
+            return (preco || 0) - (taxa || 0);
+        }
+        
+        function atualizarSimuladorNovo() {
+            const preco = parseFloat(inputPrecoVenda.value);
+            const taxa = parseFloat(inputTaxa.value);
+            const lucroFinal = calcularLucroSimulado(preco, taxa);
+            simuladorLucroFinal.textContent = `Lucro (Venda - Taxa): ${formatarMoeda(lucroFinal)}`;
+        }
+        
+        function atualizarSimuladorEdicao() {
+            const preco = parseFloat(editInputPrecoVenda.value);
+            const taxa = parseFloat(editInputTaxa.value);
+            const lucroFinal = calcularLucroSimulado(preco, taxa);
+            editSimuladorLucroFinal.textContent = `Lucro (Venda - Taxa): ${formatarMoeda(lucroFinal)}`;
+        }
+        
+        inputPrecoVenda.addEventListener("input", atualizarSimuladorNovo);
+        inputTaxa.addEventListener("input", atualizarSimuladorNovo);
+        
+        editInputPrecoVenda.addEventListener("input", atualizarSimuladorEdicao);
+        editInputTaxa.addEventListener("input", atualizarSimuladorEdicao);
+        
+        // --- Lógica de Autenticação (Auth Guard) ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                appContent.style.display = "block";
+                carregarTodosOsProdutos();
+            } else {
+                window.location.href = "./login.html"; 
+            }
+        });
+
+        // --- Lógica de Logout ---
+        document.getElementById("logout-btn").addEventListener("click", () => signOut(auth));
+        
+        // --- Lógica Principal de Dados ---
+        
+        // Salvar Novo Produto
+        formProduto.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            
+            // MUDANÇA 8: Salva 'taxaShopeePadrao'
+            const novoProduto = {
+                nome: document.getElementById("produto-nome").value,
+                precoVenda: parseFloat(inputPrecoVenda.value),
+                taxaShopeePadrao: parseFloat(inputTaxa.value), // Custo Total (Taxa + Insumos)
+                criadoEm: serverTimestamp()
+            };
+
+            try {
+                await addDoc(collection(db, "usuarios", currentUserId, "produtos"), novoProduto);
+                formProduto.reset();
+                atualizarSimuladorNovo(); // Limpa a calculadora
+                showFeedback("Produto cadastrado!", "success");
+            } catch (error) {
+                console.error("Erro ao salvar produto: ", error);
+                showFeedback("Erro ao salvar produto.", "error");
+            }
+        });
+        
+        // Carregar Produtos na Tabela
+        function carregarTodosOsProdutos() {
+            if (unsubscribeProdutos) unsubscribeProdutos();
+            
+            const produtosRef = collection(db, "usuarios", currentUserId, "produtos");
+            const qProdutos = query(produtosRef, orderBy("nome"));
+
+            unsubscribeProdutos = onSnapshot(qProdutos, (snapshot) => {
+                localProdutosCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderizarTabela(localProdutosCache);
+            });
+        }
+
+        // MUDANÇA 9: Renderizar tabela
+        function renderizarTabela(produtos) {
+            tableBody.innerHTML = "";
+            
+            if (produtos.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 20px; color: ${document.documentElement.classList.contains('dark-mode') ? '#888' : '#999'};">Nenhum produto cadastrado.</td></tr>`;
+                return;
+            }
+
+            produtos.forEach(item => {
+                const tr = document.createElement("tr");
+                tr.dataset.id = item.id;
+                const lucroEstimado = (item.precoVenda || 0) - (item.taxaShopeePadrao || 0); // Cálculo do lucro
+                
+                tr.innerHTML = `
+                    <td>${item.nome}</td>
+                    <td class="valor-venda">${formatarMoeda(item.precoVenda)}</td>
+                    <td class="valor-custo">${formatarMoeda(item.taxaShopeePadrao)}</td> <td class="valor-lucro">${formatarMoeda(lucroEstimado)}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        // --- Lógica do Modal de Edição ---
+        tableBody.addEventListener("click", (e) => {
+            const row = e.target.closest("tr");
+            if (!row || !row.dataset.id) return;
+            
+            const id = row.dataset.id;
+            const item = localProdutosCache.find(t => t.id === id);
+            
+            if (!item) return;
+            
+            // MUDANÇA 10: Preenche o modal de edição
+            document.getElementById("edit-id").value = item.id;
+            document.getElementById("edit-produto-nome").value = item.nome || "";
+            document.getElementById("edit-produto-preco-venda").value = item.precoVenda || 0;
+            document.getElementById("edit-produto-taxa").value = item.taxaShopeePadrao || 0;
+            
+            atualizarSimuladorEdicao(); 
+            
+            modalDeleteBtn.dataset.id = item.id;
+            detailsModal.style.display = "flex";
+        });
+
+        function fecharModal() {
+            detailsModal.style.display = "none";
+        }
+        document.querySelector("#details-modal .close-btn").addEventListener("click", fecharModal);
+        window.addEventListener("click", (e) => {
+            if (e.target === detailsModal) {
+                fecharModal();
+            }
+        });
+
+        // Salvar Edições
+        modalSaveBtn.addEventListener("click", async () => {
+            const id = document.getElementById("edit-id").value;
+            const docRef = doc(db, "usuarios", currentUserId, "produtos", id);
+            
+            // MUDANÇA 11: Salva 'taxaShopeePadrao'
+            const dadosAtualizados = {
+                nome: document.getElementById("edit-produto-nome").value,
+                precoVenda: parseFloat(editInputPrecoVenda.value),
+                taxaShopeePadrao: parseFloat(editInputTaxa.value),
+                editadoEm: serverTimestamp() 
+            };
+
+            try {
+                await updateDoc(docRef, dadosAtualizados);
+                fecharModal();
+                showFeedback("Produto atualizado com sucesso!", "success");
+            } catch (error) {
+                console.error("Erro ao atualizar:", error);
+                showFeedback("Erro ao atualizar.", "error");
+            }
+        });
+
+        // Excluir
+        modalDeleteBtn.addEventListener("click", async (e) => {
+            const id = e.target.dataset.id;
+            
+            if (confirm("Tem certeza que deseja excluir este produto? Esta ação é irreversível.")) {
+                try {
+                    const docRef = doc(db, "usuarios", currentUserId, "produtos", id);
+                    await deleteDoc(docRef);
+                    fecharModal();
+                    showFeedback("Produto excluído!", "success");
+                } catch (error) {
+                    showFeedback("Erro ao excluir. Verifique se ele não está em uso.", "error");
+                }
+            }
+        });
+        
+        // --- Lógica de UI (Theme Toggle) ---
+        const themeToggle = document.getElementById("theme-toggle");
+        
+        function setIcon(theme) {
+             if (theme === 'dark') {
+                themeToggle.innerHTML = "☀️"; // Sol
+             } else {
+                themeToggle.innerHTML = "🌙"; // Lua
+             }
+        }
+        setIcon('dark'); 
+
+        themeToggle.addEventListener("click", () => {
+            const isDarkMode = document.documentElement.classList.toggle("dark-mode");
+            const theme = isDarkMode ? "dark" : "light";
+            localStorage.setItem("theme", theme);
+            setIcon(theme);
+        });
+
+    </script>
+</body>
+</html>

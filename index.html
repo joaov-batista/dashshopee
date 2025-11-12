@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="pt-br" class="dark-mode">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Financeiro</title>
+    <link rel="icon" type="image/png" href="favicon.png"> 
+    
+    <style>
+        :root {
+            --cor-primaria: #ee4d2d;
+            --cor-verde: #00bfa5;
+            --cor-vermelho: #ef5350;
+            --cor-azul: #2979ff;
+            --cor-amarelo: #ffc400;
+            --cor-laranja: #fb8c00; /* Cor para Taxas */
+            --cor-cupom: #7e57c2;  /* Cor para Cupons */
+            --cor-material: #a1887f; /* Cor para Material */
+            --cor-fundo: #f4f7f6;
+            --cor-texto: #333;
+            --cor-texto-claro: #666;
+            --cor-branco: #ffffff;
+            --sombra: 0 4px 12px rgba(0,0,0,0.05);
+            --border-color: #f0f0f0;
+            --input-bg: #fcfcfc;
+        }
+
+        /* === TEMA ESCURO === */
+        html.dark-mode {
+            --cor-fundo: #121212;
+            --cor-branco: #1E1E1E; 
+            --cor-texto: #E0E0E0;
+            --cor-texto-claro: #888;
+            --sombra: 0 4px 12px rgba(0,0,0,0.3);
+            --border-color: #333;
+            --input-bg: #2C2C2C;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--cor-fundo);
+            color: var(--cor-texto);
+            margin: 0;
+            padding: 20px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        #app-content { display: none; } 
+        
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--cor-branco);
+            padding: 10px 25px;
+            border-radius: 12px;
+            box-shadow: var(--sombra);
+            margin-bottom: 20px;
+        }
+        .navbar h1 { color: var(--cor-primaria); margin: 0; font-size: 1.6em; }
+        .navbar .nav-links { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .navbar .nav-links a {
+            text-decoration: none;
+            color: var(--cor-texto-claro);
+            font-weight: 600;
+            font-size: 0.95em;
+            transition: color 0.2s;
+        }
+        .navbar .nav-links a:hover, .navbar .nav-links a.active {
+            color: var(--cor-azul);
+        }
+        .navbar button.logout-btn {
+            background-color: var(--cor-vermelho);
+            color: white; border: none; padding: 8px 14px;
+            border-radius: 8px; cursor: pointer; font-weight: 600;
+        }
+
+        /* Botão de Tema */
+        .icon-btn {
+            background: none;
+            border: none;
+            color: var(--cor-texto-claro);
+            font-size: 22px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        html.dark-mode .theme-toggle-btn {
+            color: var(--cor-amarelo);
+        }
+
+        .filter-bar {
+            display: flex; flex-wrap: wrap; gap: 15px;
+            background-color: var(--cor-branco);
+            padding: 15px 20px; border-radius: 12px;
+            margin-bottom: 20px; box-shadow: var(--sombra);
+            align-items: center;
+        }
+        .filter-bar label { font-weight: 600; color: var(--cor-texto-claro); }
+        .filter-bar select {
+            padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);
+            font-size: 1em; background-color: var(--input-bg);
+            color: var(--cor-texto);
+        }
+        .filter-bar button.btn-meta {
+            margin-left: auto;
+            background: var(--cor-azul); color: white; border: 0;
+            padding: 10px 15px; border-radius: 8px; font-weight: 600;
+            cursor: pointer;
+        }
+        .filter-bar button.btn-meta:disabled {
+            background: var(--cor-texto-claro);
+            cursor: not-allowed;
+        }
+        
+        /* KPIs CORRIGIDOS */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .kpi {
+            background: var(--cor-branco);
+            padding: 25px; border-radius: 12px; box-shadow: var(--sombra);
+        }
+        /* MUDANÇA 1: KPI Clicável */
+        .kpi.kpi-clicavel {
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .kpi.kpi-clicavel:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        html.dark-mode .kpi.kpi-clicavel:hover {
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        }
+
+        .kpi small {
+            font-size: 1em; color: var(--cor-texto-claro);
+            display: block; margin-bottom: 10px; font-weight: 600;
+        }
+        .kpi .value {
+            font-size: 2.2em; font-weight: 700;
+            display: block; line-height: 1.2;
+        }
+        .kpi .value.vendas-liquidas { color: var(--cor-verde); } 
+        .kpi .value.gastos { color: var(--cor-vermelho); } 
+        .kpi .value.lucro { color: var(--cor-azul); } 
+        .kpi .value.meta { color: var(--cor-amarelo); } 
+
+        .kpi .value.meta {
+            font-size: 1.8em; 
+        }
+        .kpi .value.meta .meta-barra {
+            font-size: 0.6em; 
+            color: var(--cor-texto-claro);
+        }
+        
+        #meta-progress-bar {
+            width: 100%; height: 8px;
+            background-color: #eee;
+            border-radius: 4px; overflow: hidden; margin-top: 10px;
+        }
+        html.dark-mode #meta-progress-bar {
+            background-color: #333;
+        }
+        #meta-progress {
+            width: 0%; height: 100%;
+            background-color: var(--cor-amarelo);
+            transition: width 0.5s ease;
+        }
+
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+        }
+        .main-column { display: flex; flex-direction: column; gap: 20px; }
+        .sidebar { display: flex; flex-direction: column; gap: 20px; }
+        
+        .card {
+            background-color: var(--cor-branco);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: var(--sombra);
+        }
+        .card h2 {
+            margin-top: 0; color: var(--cor-texto);
+            border-bottom: 2px solid var(--border-color); padding-bottom: 10px;
+        }
+
+        /* Gráfico de Custos */
+        .chart-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: stretch; 
+            height: 250px; 
+            padding: 10px;
+            gap: 10px;
+            position: relative; 
+        }
+        .chart-bar {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end; 
+            align-items: center;
+            gap: 8px;
+            position: relative; 
+        }
+        .chart-bar .bar {
+            width: 70%;
+            opacity: 0.8;
+            height: 0; 
+            border-radius: 5px 5px 0 0;
+            transition: height 0.5s ease-out;
+            position: relative;
+        }
+        .chart-bar .bar:hover { opacity: 1; }
+        .chart-bar .label {
+            font-size: 0.8em;
+            font-weight: 600;
+            color: var(--cor-texto-claro);
+            text-align: center;
+            white-space: nowrap; 
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+        .chart-bar .bar-value {
+            position: absolute;
+            top: -20px; 
+            font-size: 0.75em;
+            font-weight: bold;
+            color: var(--cor-texto); 
+            background-color: transparent; 
+            padding: 2px 0;
+            border-radius: 3px;
+            opacity: 0; 
+            transition: opacity 0.3s ease;
+            white-space: nowrap;
+            text-align: center;
+            width: 100%; 
+        }
+        .chart-bar:hover .bar-value {
+            opacity: 1;
+        }
+
+        /* Lista Recente */
+        .recent-list-wrapper { 
+            max-height: 400px; 
+            overflow-y: auto; 
+        }
+        .recent-list { 
+            list-style: none; 
+            padding: 0; 
+            margin: 0;
+        }
+        .recent-list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 5px; 
+            border-bottom: 1px solid var(--border-color);
+        }
+        .recent-list-item:last-child { border-bottom: none; }
+        .recent-list-item .info { display: flex; gap: 15px; align-items: center; }
+        .recent-list-item .icon {
+            font-size: 1.2em;
+            padding: 8px 10px;
+            border-radius: 8px;
+        }
+        .icon-venda { background-color: var(--cor-verde); color: white; }
+        .icon-gasto { background-color: var(--cor-vermelho); color: white; }
+        .recent-list-item .desc { font-weight: 600; }
+        .recent-list-item .categ { font-size: 0.9em; color: var(--cor-texto-claro); }
+        .recent-list-item .valor-venda { color: var(--cor-verde); font-weight: 700; font-size: 1.1em; } 
+        .recent-list-item .valor-gasto { color: var(--cor-vermelho); font-weight: 700; font-size: 1.1em; }
+
+        /* Botões Flutuantes (FABs) */
+        .fab-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: center;
+            gap: 15px;
+        }
+        .fab-container .fab {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            border: none;
+            color: white;
+            font-size: 24px;
+            line-height: 56px;
+            text-align: center;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .fab-container .fab-main {
+            background-color: var(--cor-primaria);
+        }
+        .fab-container .fab-secondary {
+            width: 48px;
+            height: 48px;
+            font-size: 20px;
+            line-height: 48px;
+            transform: scale(0);
+            transition: all 0.3s ease;
+        }
+        .fab-container.open .fab-secondary {
+            transform: scale(1);
+        }
+        .fab-venda { background-color: var(--cor-verde); }
+        .fab-gasto { background-color: var(--cor-vermelho); }
+
+        /* Estilo dos Modais */
+        .modal {
+            display: none;
+            position: fixed; z-index: 1000;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .modal-content {
+            background-color: var(--cor-branco);
+            color: var(--cor-texto);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 500px;
+            animation: zoomIn 0.3s;
+        }
+        @keyframes zoomIn { from { transform: scale(0.9); } to { transform: scale(1); } }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .modal-header h3 { margin: 0; font-size: 1.5em; }
+        .modal-header .close-btn {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+            line-height: 0.5;
+        }
+        
+        .modal-body form label {
+            display: block; margin-top: 15px; font-weight: 600; font-size: 0.9em;
+            color: var(--cor-texto-claro);
+        }
+        .modal-body form input, .modal-body form select {
+            width: 100%; padding: 12px; margin-top: 5px;
+            border: 1px solid var(--border-color);
+            background-color: var(--input-bg);
+            color: var(--cor-texto);
+            border-radius: 8px; box-sizing: border-box; 
+            font-size: 1em;
+        }
+        
+        .modal-body form button {
+            width: 100%; padding: 14px; color: white; border: none;
+            cursor: pointer; margin-top: 25px; border-radius: 8px; 
+            font-weight: bold; font-size: 1.1em;
+            transition: all 0.3s ease;
+        }
+        .modal-body form .input-group {
+            display: flex;
+            gap: 10px;
+        }
+        .modal-body form .input-group .col {
+            flex: 1;
+        }
+        /* Resumo da Venda no Modal */
+        #venda-resumo {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+        }
+        #venda-resumo p {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1em;
+            margin: 5px 0;
+        }
+        #venda-resumo p span {
+            color: var(--cor-texto-claro);
+        }
+        #venda-resumo p strong {
+            font-size: 1.1em;
+        }
+        #venda-resumo p strong.bruto {
+            color: var(--cor-texto-claro);
+        }
+        #venda-resumo p strong.taxa { 
+            color: var(--cor-laranja);
+        }
+        #venda-resumo p strong.cupom {
+            color: var(--cor-cupom);
+        }
+        #venda-resumo p strong.liquido {
+            color: var(--cor-verde);
+            font-size: 1.4em;
+        }
+
+
+        .modal-body form button.btn-venda { background-color: var(--cor-verde); }
+        .modal-body form button.btn-gasto { background-color: var(--cor-vermelho); }
+        .modal-body form button.btn-meta { background-color: var(--cor-amarelo); color: #333; }
+
+        /* Feedback Modal */
+        #feedback-modal .modal-content { max-width: 350px; text-align: center; }
+        #feedback-modal .icon { font-size: 3.5em; }
+        #feedback-modal .success { color: var(--cor-verde); }
+        #feedback-modal .error { color: var(--cor-vermelho); }
+        #feedback-modal p { font-size: 1.2em; font-weight: 600; margin: 10px 0 0; }
+
+        /* MUDANÇA 2: CSS para os novos modais */
+        .modal-footer {
+            margin-top: 25px;
+            display: flex;
+            justify-content: flex-end; /* Botão à direita */
+        }
+        .btn-detalhes {
+            background-color: var(--cor-azul);
+            color: white;
+            padding: 10px 18px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95em;
+            transition: background-color 0.2s;
+        }
+        .btn-detalhes:hover {
+            background-color: #216be0;
+        }
+        .resumo-lista {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .resumo-lista-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 5px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .resumo-lista-item:last-child {
+            border-bottom: none;
+        }
+        .resumo-lista-item .categ {
+            font-weight: 600;
+            color: var(--cor-texto);
+        }
+        .resumo-lista-item .valor {
+            font-weight: 700;
+            font-size: 1.1em;
+        }
+        .resumo-lista-item .valor-gasto { color: var(--cor-vermelho); }
+        .resumo-lista-item .valor-venda { color: var(--cor-verde); }
+        
+        @media (max-width: 900px) {
+            .dashboard-layout { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 600px) {
+            .kpi-grid { grid-template-columns: 1fr; }
+            .navbar { flex-direction: column; gap: 10px; }
+            .navbar .nav-links { justify-content: center; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+            .filter-bar button.btn-meta { margin-left: 0; }
+            .modal-body form .input-group { flex-direction: column; gap: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-content">
+
+        <nav class="navbar">
+            <h1>Meu Dashboard</h1>
+            <div class="nav-links">
+                <a href="index.html" class="active"><b>Dashboard</b></a>
+                <a href="vendas.html">Lançamentos de Vendas</a>
+                <a href="gastos.html">Lançamentos de Gastos</a>
+                <a href="produtos.html">Gerenciar Produtos</a>
+                <button class="icon-btn theme-toggle-btn" id="theme-toggle" title="Mudar tema">☀️</button> 
+                <button id="logout-btn" class="logout-btn">Sair</button>
+            </div>
+        </nav>
+
+        <div class="filter-bar">
+            <label for="filter-month">Mês:</label>
+            <select id="filter-month"></select>
+            <label for="filter-year">Ano:</label>
+            <select id="filter-year"></select>
+            <button class="btn-meta" id="open-meta-modal-btn">Definir Meta</button>
+        </div>
+
+        <div class="kpi-grid">
+            <div class="kpi kpi-clicavel" id="kpi-card-vendas">
+                <small id="kpi-vendas-label">Vendas</small>
+                <span class="value vendas-liquidas" id="kpi-vendas-lucro">R$ 0,00</span>
+            </div>
+            <div class="kpi kpi-clicavel" id="kpi-card-despesas">
+                <small id="kpi-gastos-label">Despesas</small>
+                <span class="value gastos" id="kpi-despesas">R$ 0,00</span>
+            </div>
+            <div class="kpi">
+                <small id="kpi-lucro-label">Lucro</small>
+                <span class="value lucro" id="kpi-lucro">R$ 0,00</span>
+            </div>
+            <div class="kpi" id="kpi-meta-card">
+                <small>Meta (Vendas)</small>
+                <span class="value meta" id="kpi-meta-texto">
+                    R$ 0,00 <span class="meta-barra">/ R$ 0,00</span>
+                </span>
+                <div id="meta-progress-bar">
+                    <div id="meta-progress"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-layout">
+            <div class="main-column">
+                <div class="card">
+                    <h2 id="chart-custos-label">Análise de Custos Totais</h2>
+                    <div class="chart-container" id="chart-custos">
+                        </div>
+                </div>
+            </div>
+            <div class="sidebar">
+                <div class="card">
+                    <h2 id="recent-list-label">Últimos Lançamentos</h2>
+                    <div class="recent-list-wrapper" id="recent-list-wrapper">
+                        <ul class="recent-list" id="recent-list">
+                            </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div> 
+    
+    <div class="fab-container" id="fab-container">
+        <button class="fab fab-secondary fab-gasto" id="open-gasto-modal-btn" title="Lançar Gasto">💸</button>
+        <button class="fab fab-secondary fab-venda" id="open-venda-modal-btn" title="Lançar Venda">💰</button>
+        <button class="fab fab-main" id="fab-main-btn">+</button>
+    </div>
+
+    <div id="modal-venda" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Lançar Venda</h3>
+                <span class="close-btn" data-modal="modal-venda">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="form-venda">
+                    <label for="venda-data">Data da Venda:</label>
+                    <input type="date" id="venda-data" required>
+                    
+                    <label for="venda-produto">Produto Vendido:</label>
+                    <select id="venda-produto" required>
+                        <option value="">Carregando produtos...</option>
+                    </select>
+
+                    <label for="venda-cliente">Nome do Cliente:</label>
+                    <input type="text" id="venda-cliente" required placeholder="Ex: Maria Silva">
+                    
+                    <div class="input-group">
+                        <div class="col">
+                            <label for="venda-preco-venda">Preço de Venda (R$):</label>
+                            <input type="number" id="venda-preco-venda" step="0.01" required>
+                        </div>
+                        <div class="col">
+                            <label for="venda-quantidade">Quantidade:</label>
+                            <input type="number" id="venda-quantidade" value="1" step="1" required>
+                        </div>
+                    </div>
+                    
+                    <label for="venda-taxa">Taxa Shopee (R$):</label>
+                    <input type="number" id="venda-taxa" step="0.01" required placeholder="Ex: 7.20">
+
+                    <label for="venda-cupom">Cupom (R$):</label>
+                    <input type="number" id="venda-cupom" step="0.01" value="0" placeholder="Ex: 0.00">
+
+                    <div id="venda-resumo">
+                        <p><span>Total Bruto:</span> <strong class="bruto" id="venda-total-bruto">R$ 0,00</strong></p>
+                        <p><span>Taxa Shopee:</span> <strong class="taxa" id="venda-total-taxa">- R$ 0,00</strong></p>
+                        <p><span>Cupom:</span> <strong class="cupom" id="venda-total-cupom">- R$ 0,00</strong></p>
+                        <p><span>LUCRO (na venda):</span> <strong class="liquido" id="venda-lucro-liquido">R$ 0,00</strong></p>
+                    </div>
+
+                    <button type="submit" class="btn-venda">Adicionar Venda</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div id="modal-gasto" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Lançar Despesa</h3>
+                <span class="close-btn" data-modal="modal-gasto">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="form-gasto">
+                    <label for="gasto-data">Data da Despesa:</label>
+                    <input type="date" id="gasto-data" required>
+                    <label for="gasto-descricao">Descrição:</label>
+                    <input type="text" id="gasto-descricao" required>
+                    <label for="gasto-valor">Valor (R$):</label>
+                    <input type="number" id="gasto-valor" step="0.01" required>
+                    <label for="gasto-categoria">Categoria:</label>
+                    <select id="gasto-categoria">
+                        <option value="material">Material</option>
+                        <option value="ads">Anúncios (Ads)</option>
+                        <option value="salario-joao">Salário (João)</option>
+                        <option value="salario-fabrizio">Salário (Fabrizio)</option>
+                        <option value="embalagem">Embalagem</option>
+                        <option value="outros">Outros</option>
+                    </select>
+                    <button type="submit" class="btn-gasto">Adicionar Despesa</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div id="modal-meta" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Definir Meta</h3>
+                <span class="close-btn" data-modal="modal-meta">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="form-meta">
+                    <p>Definindo meta para <strong id="meta-mes-ano-texto"></strong></p>
+                    <label for="meta-valor">Valor da Meta (Baseado em Vendas):</label>
+                    <input type="number" id="meta-valor" step="100" placeholder="Ex: 5000">
+                    <button type="submit" class="btn-meta">Salvar Meta</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="feedback-modal" class="modal">
+        <div class="modal-content">
+            <div id="feedback-icon" class="icon"></div>
+            <p id="feedback-message"></p>
+        </div>
+    </div>
+
+    <div id="modal-resumo-vendas" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Resumo de Vendas</h3>
+                <span class="close-btn" data-modal="modal-resumo-vendas">&times;</span>
+            </div>
+            <div class="modal-body" id="resumo-vendas-body">
+                <p>Carregando...</p>
+            </div>
+            <div class="modal-footer">
+                <a href="vendas.html" class="btn-detalhes">Ver Detalhes</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-resumo-despesas" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Resumo de Despesas</h3>
+                <span class="close-btn" data-modal="modal-resumo-despesas">&times;</span>
+            </div>
+            <div class="modal-body" id="resumo-despesas-body">
+                <p>Carregando...</p>
+            </div>
+            <div class="modal-footer">
+                <a href="gastos.html" class="btn-detalhes">Ver Detalhes</a>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module">
+        // Importações
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+        import { 
+            getFirestore, collection, addDoc, onSnapshot, 
+            query, orderBy, where, doc, setDoc, getDoc,
+            Timestamp, serverTimestamp, updateDoc
+        } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+
+        // SUA CONFIGURAÇÃO (NÃO MUDE)
+        const firebaseConfig = {
+          apiKey: "AIzaSyCKtzcbDA5y0mGqo2UdYdinf44adGEhnPA",
+          authDomain: "dashboard-shopee.firebaseapp.com",
+          projectId: "dashboard-shopee",
+          storageBucket: "dashboard-shopee.firebasestorage.app",
+          messagingSenderId: "221610244041",
+          appId: "1:221610244041:web:dcd4f817ea3f76ff029a18"
+        };
+        
+        // Inicialização
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- Variáveis Globais ---
+        let currentUserId = null;
+        let unsubscribeVendas = null; 
+        let unsubscribeGastos = null; 
+        let unsubscribeMetas = null;
+        let unsubscribeProdutos = null;
+        let produtosCache = []; 
+        const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+        
+        // Variáveis para o gráfico e KPIs
+        let totalTaxasGlobal = 0;
+        let totalCuponsGlobal = 0;
+        let gastosPorCategoriaGlobal = {};
+        
+        // MUDANÇA 6: Nomes de exibição para gráficos e resumos
+        const nomesExibicao = {
+            'material': 'Material',
+            'ads': 'Anúncios',
+            'Cupons': 'Cupons',
+            'Taxas Shopee': 'Taxas Shopee',
+            'salario-joao': 'Salário (João)',
+            'salario-fabrizio': 'Salário (Fabrizio)',
+            'embalagem': 'Embalagem',
+            'outros': 'Outros'
+        };
+
+        // --- Elementos da UI ---
+        const appContent = document.getElementById("app-content");
+        const kpiVendasLucroEl = document.getElementById("kpi-vendas-lucro");
+        const kpiDespesasEl = document.getElementById("kpi-despesas");
+        const kpiLucroEl = document.getElementById("kpi-lucro");
+        const kpiMetaTextoEl = document.getElementById("kpi-meta-texto");
+        const metaProgress = document.getElementById("meta-progress");
+        const filterMonth = document.getElementById("filter-month");
+        const filterYear = document.getElementById("filter-year");
+        const recentListEl = document.getElementById("recent-list");
+        const chartCustosEl = document.getElementById("chart-custos");
+        const metaCard = document.getElementById("kpi-meta-card");
+        const metaButton = document.getElementById("open-meta-modal-btn");
+        
+        // MUDANÇA 7: Novos elementos dos modais e KPIs
+        const kpiCardVendas = document.getElementById("kpi-card-vendas");
+        const kpiCardDespesas = document.getElementById("kpi-card-despesas");
+        const resumoVendasBody = document.getElementById("resumo-vendas-body");
+        const resumoDespesasBody = document.getElementById("resumo-despesas-body");
+
+        // Elementos do Modal de Venda
+        const selectProdutoVenda = document.getElementById("venda-produto");
+        const inputPrecoVenda = document.getElementById("venda-preco-venda");
+        const inputTaxa = document.getElementById("venda-taxa"); 
+        const inputQuantidade = document.getElementById("venda-quantidade");
+        const inputCupom = document.getElementById("venda-cupom"); 
+        
+        const spanTotalBruto = document.getElementById("venda-total-bruto");
+        const spanTotalTaxa = document.getElementById("venda-total-taxa");
+        const spanTotalCupom = document.getElementById("venda-total-cupom"); 
+        const spanLucroLiquido = document.getElementById("venda-lucro-liquido");
+
+
+        // --- Lógica de UI (Modal de Feedback) ---
+        const feedbackModal = document.getElementById("feedback-modal");
+        const feedbackIcon = document.getElementById("feedback-icon");
+        const feedbackMessage = document.getElementById("feedback-message");
+
+        function showFeedback(message, type = 'success', duration = 2000) {
+            feedbackMessage.textContent = message;
+            feedbackIcon.className = `icon ${type}`;
+            feedbackIcon.innerHTML = type === 'success' ? "✅" : "❌";
+            feedbackModal.style.display = "flex";
+            
+            setTimeout(() => {
+                feedbackModal.style.display = "none";
+            }, duration);
+        }
+        
+        // --- Lógica de UI (Modais) ---
+        const allModals = document.querySelectorAll(".modal");
+        const allCloseBtns = document.querySelectorAll(".close-btn");
+
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) modal.style.display = "flex";
+        }
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) modal.style.display = "none";
+        }
+
+        document.getElementById("open-venda-modal-btn").onclick = () => openModal("modal-venda");
+        document.getElementById("open-gasto-modal-btn").onclick = () => openModal("modal-gasto");
+        metaButton.onclick = () => {
+            const mesNome = meses[filterMonth.value];
+            const ano = filterYear.value;
+            document.getElementById("meta-mes-ano-texto").textContent = `${mesNome} de ${ano}`;
+            openModal("modal-meta");
+        };
+
+        allCloseBtns.forEach(btn => {
+            btn.onclick = () => closeModal(btn.dataset.modal);
+        });
+        window.onclick = (e) => {
+            allModals.forEach(modal => {
+                if (e.target === modal) {
+                    modal.style.display = "none";
+                }
+            });
+        };
+
+        // --- Lógica de UI (FAB Menu) ---
+        const fabContainer = document.getElementById("fab-container");
+        document.getElementById("fab-main-btn").onclick = () => {
+            fabContainer.classList.toggle("open");
+        };
+
+        // --- Lógica de UI (Filtros de Data) ---
+        function popularFiltros() {
+            const hoje = new Date();
+            const mesAtual = hoje.getMonth();
+            const anoAtual = hoje.getFullYear();
+
+            filterMonth.add(new Option("Todos os Meses", "all"));
+            meses.forEach((mes, index) => {
+                const option = new Option(mes, index);
+                if(index === mesAtual) option.selected = true;
+                filterMonth.add(option);
+            });
+            
+            for (let ano = anoAtual + 1; ano >= 2020; ano--) {
+                const option = new Option(ano, ano);
+                if(ano === anoAtual) option.selected = true;
+                filterYear.add(option);
+            }
+            
+            filterMonth.addEventListener("change", carregarDadosDashboard);
+            filterYear.addEventListener("change", carregarDadosDashboard);
+            
+            const dataHojeString = hoje.toISOString().split('T')[0];
+            document.getElementById('venda-data').value = dataHojeString;
+            document.getElementById('gasto-data').value = dataHojeString;
+        }
+
+        // --- Lógica de Formatação ---
+        function formatarMoeda(valor) {
+            return (valor || 0).toLocaleString('pt-br', { style: 'currency', currency: 'BRL' });
+        }
+
+        // --- Lógica de Autenticação (Auth Guard) ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                appContent.style.display = "block";
+                popularFiltros();
+                carregarDadosDashboard();
+                carregarProdutos();
+
+                // MUDANÇA 8: Adicionar listeners de clique nos KPIs
+                kpiCardVendas.addEventListener("click", () => openModal("modal-resumo-vendas"));
+                kpiCardDespesas.addEventListener("click", () => openModal("modal-resumo-despesas"));
+            } else {
+                window.location.href = "./login.html"; 
+            }
+        });
+
+        // --- Lógica de Logout ---
+        document.getElementById("logout-btn").addEventListener("click", () => signOut(auth));
+
+        // --- Lógica de Produtos ---
+        function carregarProdutos() {
+            const produtosRef = collection(db, "usuarios", currentUserId, "produtos");
+            const qProdutos = query(produtosRef, orderBy("nome"));
+            
+            if (unsubscribeProdutos) unsubscribeProdutos();
+            
+            unsubscribeProdutos = onSnapshot(qProdutos, (snapshot) => {
+                produtosCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                selectProdutoVenda.innerHTML = '<option value="">Selecione um produto</option>';
+                
+                if (produtosCache.length === 0) {
+                     selectProdutoVenda.innerHTML = '<option value="">Cadastre um produto primeiro</option>';
+                }
+                
+                produtosCache.forEach(prod => {
+                    const option = new Option(`${prod.nome} (${formatarMoeda(prod.precoVenda)})`, prod.id);
+                    option.dataset.nome = prod.nome;
+                    option.dataset.preco = prod.precoVenda || 0; 
+                    option.dataset.taxa = prod.taxaShopeePadrao || 0; 
+
+                    selectProdutoVenda.add(option);
+                });
+            });
+        }
+
+        // --- Lógica Principal de Dados (Dashboard) ---
+        function getQueryRefs() {
+            const mes = filterMonth.value;
+            const ano = parseInt(filterYear.value);
+
+            const vendasRef = collection(db, "usuarios", currentUserId, "vendas");
+            const gastosRef = collection(db, "usuarios", currentUserId, "gastos");
+            let metaRef = null;
+            let qVendas, qGastos;
+
+            if (mes === "all") {
+                const inicioDoAno = Timestamp.fromDate(new Date(ano, 0, 1));
+                const fimDoAno = Timestamp.fromDate(new Date(ano, 11, 31, 23, 59, 59));
+                qVendas = query(vendasRef, where("data", ">=", inicioDoAno), where("data", "<=", fimDoAno), orderBy("data", "desc"));
+                qGastos = query(gastosRef, where("data", ">=", inicioDoAno), where("data", "<=", fimDoAno), orderBy("data", "desc"));
+            } else {
+                const mesInt = parseInt(mes);
+                const inicioDoMes = Timestamp.fromDate(new Date(ano, mesInt, 1));
+                const fimDoMes = Timestamp.fromDate(new Date(ano, mesInt + 1, 0, 23, 59, 59));
+                const metaId = `meta-${ano}-${mesInt}`;
+                metaRef = doc(db, "usuarios", currentUserId, "configuracao", metaId);
+                qVendas = query(vendasRef, where("data", ">=", inicioDoMes), where("data", "<=", fimDoMes), orderBy("data", "desc"));
+                qGastos = query(gastosRef, where("data", ">=", inicioDoMes), where("data", "<=", fimDoMes), orderBy("data", "desc"));
+            }
+            
+            return { qVendas, qGastos, metaRef };
+        }
+
+        function carregarDadosDashboard() {
+            if (unsubscribeVendas) unsubscribeVendas();
+            if (unsubscribeGastos) unsubscribeGastos();
+            if (unsubscribeMetas) unsubscribeMetas();
+
+            const { qVendas, qGastos, metaRef } = getQueryRefs();
+            const isMonthlyView = (filterMonth.value !== "all");
+
+            const labelSufixo = isMonthlyView ? "(Mês)" : "(Ano)";
+            document.getElementById("kpi-vendas-label").textContent = `Vendas ${labelSufixo}`;
+            document.getElementById("kpi-gastos-label").textContent = `Despesas ${labelSufixo}`;
+            document.getElementById("kpi-lucro-label").textContent = `Lucro ${labelSufixo}`;
+            document.getElementById("chart-custos-label").textContent = `Análise de Custos Totais ${labelSufixo}`;
+            document.getElementById("recent-list-label").textContent = `Últimos Lançamentos ${labelSufixo}`;
+            
+            metaCard.style.display = isMonthlyView ? "block" : "none";
+            metaButton.disabled = !isMonthlyView;
+            
+            let totalVendasLucro = 0; 
+            let totalDespesas = 0; 
+            let metaVendasLucro = 0; 
+            
+            totalTaxasGlobal = 0;
+            totalCuponsGlobal = 0;
+            
+            let ultimasVendas = [];
+            let ultimosGastos = [];
+
+            // Ouve VENDAS
+            unsubscribeVendas = onSnapshot(qVendas, (snapshot) => {
+                totalVendasLucro = 0;
+                totalTaxasGlobal = 0;
+                totalCuponsGlobal = 0;
+                ultimasVendas = [];
+                let produtosVendidos = {}; // MUDANÇA 9: Objeto para Top 3
+
+                snapshot.docs.forEach(doc => {
+                    const venda = doc.data();
+                    
+                    totalVendasLucro += venda.valorLucroVenda || 0;
+                    totalTaxasGlobal += venda.valorTaxa || 0;
+                    totalCuponsGlobal += venda.valorCupom || 0;
+                    ultimasVendas.push({ tipo: 'venda', ...venda });
+
+                    // MUDANÇA 10: Lógica para calcular Top 3
+                    const nome = venda.produtoNome || 'Desconhecido';
+                    const qtd = venda.quantidade || 1;
+                    produtosVendidos[nome] = (produtosVendidos[nome] || 0) + qtd;
+                });
+                
+                // MUDANÇA 11: Processar e renderizar Top 3
+                const top3Produtos = Object.entries(produtosVendidos)
+                                         .sort((a, b) => b[1] - a[1]) // Ordena por quantidade
+                                         .slice(0, 3);
+                renderizarResumoVendas(top3Produtos);
+
+                atualizarKPIs();
+                atualizarListaRecente();
+                atualizarGraficoCustos(); 
+            });
+
+            // Ouve GASTOS (Despesas)
+            unsubscribeGastos = onSnapshot(qGastos, (snapshot) => {
+                totalDespesas = 0;
+                ultimosGastos = [];
+                gastosPorCategoriaGlobal = {}; 
+
+                snapshot.docs.forEach(doc => {
+                    const gasto = doc.data();
+                    totalDespesas += gasto.valor;
+                    ultimosGastos.push({ tipo: 'gasto', ...gasto });
+                    
+                    const cat = gasto.categoria || 'outros';
+                    gastosPorCategoriaGlobal[cat] = (gastosPorCategoriaGlobal[cat] || 0) + gasto.valor;
+                });
+                
+                // MUDANÇA 12: Renderizar resumo de despesas
+                renderizarResumoDespesas(gastosPorCategoriaGlobal);
+
+                atualizarKPIs();
+                atualizarListaRecente();
+                atualizarGraficoCustos();
+            });
+            
+            // Ouve METAS
+            if (isMonthlyView && metaRef) {
+                unsubscribeMetas = onSnapshot(metaRef, (doc) => {
+                    metaVendasLucro = 0;
+                    if (doc.exists()) {
+                        metaVendasLucro = doc.data().metaVendasLucro || 0; 
+                    }
+                    document.getElementById("meta-valor").value = metaVendasLucro;
+                    atualizarKPIs();
+                });
+            } else {
+                 document.getElementById("meta-valor").value = 0;
+                 atualizarKPIs();
+            }
+            
+            function atualizarKPIs() {
+                kpiVendasLucroEl.textContent = formatarMoeda(totalVendasLucro);
+                kpiDespesasEl.textContent = formatarMoeda(totalDespesas);
+                
+                const lucroLiquido = totalVendasLucro - totalDespesas;
+                kpiLucroEl.textContent = formatarMoeda(lucroLiquido);
+                
+                kpiMetaTextoEl.innerHTML = `${formatarMoeda(totalVendasLucro)} <span class="meta-barra">/ ${formatarMoeda(metaVendasLucro)}</span>`;
+                
+                let progressoPercentual = 0;
+                if (metaVendasLucro > 0) {
+                    progressoPercentual = (totalVendasLucro / metaVendasLucro) * 100;
+                }
+                metaProgress.style.width = `${Math.min(progressoPercentual, 100)}%`;
+            }
+
+            function atualizarListaRecente() {
+                const todos = [...ultimasVendas, ...ultimosGastos];
+                todos.sort((a, b) => b.data.toMillis() - a.data.toMillis());
+                
+                const ul = document.getElementById("recent-list"); 
+                ul.innerHTML = ""; 
+                
+                const limite = isMonthlyView ? 5 : 10;
+                const ultimosItens = todos.slice(0, limite);
+                
+                if (ultimosItens.length === 0) {
+                    ul.innerHTML = `<p style='text-align: center; color: ${document.documentElement.classList.contains('dark-mode') ? '#888' : '#999'};'>Nenhum lançamento.</p>`;
+                    return;
+                }
+                
+                ultimosItens.forEach(item => {
+                    const li = document.createElement("li");
+                    li.className = "recent-list-item";
+                    
+                    if (item.tipo === 'venda') {
+                        const lucroDaVenda = item.valorLucroVenda || 0;
+                        li.innerHTML = `
+                            <div class="info">
+                                <span class="icon icon-venda">💰</span>
+                                <div>
+                                    <div class="desc">${item.produtoNome || 'Venda'} (x${item.quantidade || 1})</div>
+                                    <div class="categ">${item.nomeCliente || 'N/A'}</div>
+                                </div>
+                            </div>
+                            <span class="valor-venda">+ ${formatarMoeda(lucroDaVenda)}</span>
+                        `;
+                    } else { // Gasto
+                        li.innerHTML = `
+                            <div class="info">
+                                <span class="icon icon-gasto">💸</span>
+                                <div>
+                                    <div class="desc">${item.descricao}</div>
+                                    <div class="categ">${nomesExibicao[item.categoria] || item.categoria}</div>
+                                </div>
+                            </div>
+                            <span class="valor-gasto">- ${formatarMoeda(item.valor)}</span>
+                        `;
+                    }
+                    ul.appendChild(li); 
+                });
+            }
+        }
+        
+        // --- LÓGICA DO GRÁFICO ---
+        function atualizarGraficoCustos() {
+            const custosGrafico = { ...gastosPorCategoriaGlobal };
+            
+            if (totalTaxasGlobal > 0) custosGrafico['Taxas Shopee'] = totalTaxasGlobal;
+            if (totalCuponsGlobal > 0) custosGrafico['Cupons'] = totalCuponsGlobal;
+            
+            // Custo de material (custoInsumo) não é mais somado aqui.
+            // Ele já está dentro de gastosPorCategoriaGlobal['material']
+
+            const categoriasFinais = {};
+            const categoriasInteresse = ['material', 'ads', 'Cupons', 'Taxas Shopee'];
+            let outrosValor = 0;
+
+            for (const cat in custosGrafico) {
+                if (categoriasInteresse.includes(cat)) {
+                    categoriasFinais[cat] = (categoriasFinais[cat] || 0) + custosGrafico[cat];
+                } else {
+                    outrosValor += custosGrafico[cat]; 
+                }
+            }
+            if (outrosValor > 0) {
+                categoriasFinais['Outros'] = outrosValor;
+            }
+
+            renderizarGraficoCustos(categoriasFinais);
+        }
+
+        function renderizarGraficoCustos(categorias) {
+            chartCustosEl.innerHTML = ""; 
+            
+            const categoriasFiltradas = Object.fromEntries(
+                Object.entries(categorias).filter(([, valor]) => valor > 0)
+            );
+
+            const valores = Object.values(categoriasFiltradas);
+            const totalCustos = valores.reduce((a, b) => a + b, 0);
+
+            if (totalCustos === 0) {
+                chartCustosEl.innerHTML = `<p style='text-align: center; color: ${document.documentElement.classList.contains('dark-mode') ? '#888' : '#999'}; width: 100%;'>Sem custos para exibir.</p>`;
+                return;
+            }
+
+            const maxValor = Math.max(...valores);
+            
+            const cores = {
+                'Taxas Shopee': 'var(--cor-laranja)', 
+                'ads': 'var(--cor-azul)', 
+                'material': 'var(--cor-material)', 
+                'Cupons': 'var(--cor-cupom)',
+                'Outros': 'var(--cor-texto-claro)', 
+            };
+
+            const sortedCategorias = Object.entries(categoriasFiltradas).sort((a, b) => b[1] - a[1]);
+
+            sortedCategorias.forEach(([categoria, valor]) => {
+                const percentualAltura = (valor / maxValor) * 100;
+                const cor = cores[categoria] || cores['Outros'];
+                
+                const barWrapper = document.createElement("div");
+                barWrapper.className = "chart-bar";
+                
+                const bar = document.createElement("div");
+                bar.className = "bar";
+                bar.style.height = "0px"; 
+                bar.style.backgroundColor = cor; 
+                bar.title = `${nomesExibicao[categoria] || categoria}: ${formatarMoeda(valor)}`; 
+                
+                const valueSpan = document.createElement("span");
+                valueSpan.className = "bar-value";
+                valueSpan.textContent = formatarMoeda(valor);
+                
+                const label = document.createElement("span");
+                label.className = "label";
+                label.textContent = nomesExibicao[categoria] || categoria;
+                
+                barWrapper.appendChild(valueSpan); 
+                barWrapper.appendChild(bar);
+                barWrapper.appendChild(label);
+                chartCustosEl.appendChild(barWrapper);
+                
+                setTimeout(() => {
+                    bar.style.height = `${percentualAltura}%`;
+                }, 100);
+            });
+        }
+        // --- FIM DA LÓGICA DO GRÁFICO ---
+
+        // MUDANÇA 13: Novas funções para renderizar resumos dos modais
+        function renderizarResumoVendas(top3) {
+            if (top3.length === 0) {
+                resumoVendasBody.innerHTML = `<p style='text-align: center; color: var(--cor-texto-claro);'>Nenhuma venda registrada neste período.</p>`;
+                return;
+            }
+            let html = '<ul class="resumo-lista">';
+            top3.forEach(([nome, qtd]) => {
+                html += `
+                    <li class="resumo-lista-item">
+                        <span class="categ">${nome}</span>
+                        <span class="valor valor-venda">${qtd} un.</span>
+                    </li>
+                `;
+            });
+            html += '</ul>';
+            resumoVendasBody.innerHTML = html;
+        }
+
+        function renderizarResumoDespesas(gastos) {
+            const gastosEntries = Object.entries(gastos).filter(([, valor]) => valor > 0);
+            if (gastosEntries.length === 0) {
+                resumoDespesasBody.innerHTML = `<p style='text-align: center; color: var(--cor-texto-claro);'>Nenhuma despesa registrada neste período.</p>`;
+                return;
+            }
+
+            let html = '<ul class="resumo-lista">';
+            gastosEntries.sort((a, b) => b[1] - a[1]).forEach(([categ, valor]) => {
+                html += `
+                    <li class="resumo-lista-item">
+                        <span class="categ">${nomesExibicao[categ] || categ}</span>
+                        <span class="valor valor-gasto">${formatarMoeda(valor)}</span>
+                    </li>
+                `;
+            });
+            html += '</ul>';
+            resumoDespesasBody.innerHTML = html;
+        }
+
+        // --- Lógica dos Formulários (Adicionar Dados) ---
+        function getDataTimestamp(inputId) {
+            const dataInput = document.getElementById(inputId).value;
+            const dataObj = new Date(dataInput);
+            const dataUtc = new Date(dataObj.getTime() + dataObj.getTimezoneOffset() * 60000);
+            return Timestamp.fromDate(dataUtc);
+        }
+        
+        // MUDANÇA 14: Lógica de cálculo do modal de venda
+        function calcularTotalVenda() {
+            const precoVenda = parseFloat(inputPrecoVenda.value) || 0;
+            const taxa = parseFloat(inputTaxa.value) || 0;
+            const cupom = parseFloat(inputCupom.value) || 0;
+            const qtd = parseInt(inputQuantidade.value) || 1;
+            
+            const bruto = precoVenda * qtd;
+            const taxaTotal = taxa * qtd;
+            const cupomTotal = cupom; 
+            
+            const lucro = bruto - taxaTotal - cupomTotal;
+
+            spanTotalBruto.textContent = formatarMoeda(bruto);
+            spanTotalTaxa.textContent = `- ${formatarMoeda(taxaTotal)}`;
+            spanTotalCupom.textContent = `- ${formatarMoeda(cupomTotal)}`;
+            spanLucroLiquido.textContent = formatarMoeda(lucro);
+        }
+        
+        selectProdutoVenda.addEventListener("change", (e) => {
+            const selected = e.target.options[e.target.selectedIndex];
+            inputPrecoVenda.value = parseFloat(selected.dataset.preco || 0);
+            inputTaxa.value = parseFloat(selected.dataset.taxa || 0); 
+            calcularTotalVenda();
+        });
+        
+        inputPrecoVenda.addEventListener("input", calcularTotalVenda);
+        inputQuantidade.addEventListener("input", calcularTotalVenda);
+        inputTaxa.addEventListener("input", calcularTotalVenda); 
+        inputCupom.addEventListener("input", calcularTotalVenda);
+
+        // MUDANÇA 15: Enviar VENDA (lógica de custo corrigida)
+        document.getElementById("form-venda").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const select = selectProdutoVenda;
+            const selectedOption = select.options[select.selectedIndex];
+            
+            const precoVenda = parseFloat(inputPrecoVenda.value);
+            const taxa = parseFloat(inputTaxa.value);
+            const cupom = parseFloat(inputCupom.value) || 0;
+            const qtd = parseInt(inputQuantidade.value);
+            
+            if (qtd <= 0) {
+                showFeedback("A quantidade deve ser pelo menos 1.", "error");
+                return;
+            }
+            
+            const bruto = precoVenda * qtd;
+            const taxaTotal = taxa * qtd;
+            const cupomTotal = cupom;
+            const lucroDaVenda = bruto - taxaTotal - cupomTotal;
+            
+            const novaVenda = {
+                data: getDataTimestamp("venda-data"),
+                nomeCliente: document.getElementById("venda-cliente").value,
+                produtoId: selectedOption.value,
+                produtoNome: selectedOption.dataset.nome,
+                quantidade: qtd,
+                valorBruto: bruto,       
+                valorTaxa: taxaTotal, 
+                custoInsumo: 0, // Custo de material NÃO é salvo na venda
+                custoTotal: taxaTotal, // Custo total da venda é SÓ a taxa
+                valorCupom: cupomTotal, 
+                valorLucroVenda: lucroDaVenda, 
+                criadoEm: serverTimestamp()
+            };
+            
+            try {
+                await addDoc(collection(db, "usuarios", currentUserId, "vendas"), novaVenda);
+                e.target.reset();
+                document.getElementById('venda-data').valueAsDate = new Date();
+                document.getElementById('venda-quantidade').value = 1;
+                document.getElementById('venda-cupom').value = 0;
+                calcularTotalVenda();
+                closeModal("modal-venda");
+                showFeedback("Venda adicionada!", "success");
+            } catch (error) {
+                console.error("Erro ao salvar venda:", error);
+                showFeedback("Erro ao salvar venda.", "error");
+            }
+        });
+
+        // Enviar GASTO
+        document.getElementById("form-gasto").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const novoGasto = {
+                data: getDataTimestamp("gasto-data"),
+                descricao: document.getElementById("gasto-descricao").value,
+                valor: parseFloat(document.getElementById("gasto-valor").value),
+                categoria: document.getElementById("gasto-categoria").value,
+                criadoEm: serverTimestamp()
+            };
+
+            try {
+                await addDoc(collection(db, "usuarios", currentUserId, "gastos"), novoGasto);
+                e.target.reset();
+                document.getElementById('gasto-data').valueAsDate = new Date();
+                closeModal("modal-gasto");
+                showFeedback("Despesa adicionada!", "success");
+            } catch (error) {
+                showFeedback("Erro ao salvar despesa.", "error");
+            }
+        });
+
+        // Salvar META
+        document.getElementById("form-meta").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const novaMeta = parseFloat(document.getElementById("meta-valor").value);
+            const mes = parseInt(filterMonth.value);
+            const ano = parseInt(filterYear.value);
+            const metaId = `meta-${ano}-${mes}`; 
+
+            try {
+                const metaRef = doc(db, "usuarios", currentUserId, "configuracao", metaId);
+                await setDoc(metaRef, { metaVendasLucro: novaMeta }); 
+                closeModal("modal-meta");
+                showFeedback("Meta salva com sucesso!", "success");
+            } catch (error) {
+                showFeedback("Erro ao salvar meta.", "error");
+            }
+        });
+        
+        // --- Lógica de UI (Theme Toggle) ---
+        const themeToggle = document.getElementById("theme-toggle");
+        
+        function setIcon(theme) {
+             if (theme === 'dark') {
+                themeToggle.innerHTML = "☀️"; // Sol
+             } else {
+                themeToggle.innerHTML = "🌙"; // Lua
+             }
+        }
+        setIcon('dark'); 
+
+        themeToggle.addEventListener("click", () => {
+            const isDarkMode = document.documentElement.classList.toggle("dark-mode");
+            const theme = isDarkMode ? "dark" : "light";
+            localStorage.setItem("theme", theme);
+            setIcon(theme);
+        });
+        
+    </script>
+</body>
+</html>

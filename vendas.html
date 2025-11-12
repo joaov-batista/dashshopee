@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="pt-br" class="dark-mode">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lançamentos de Vendas</title>
+    <link rel="icon" type="image/png" href="logo.png"> 
+
+    <style>
+        :root {
+            --cor-primaria: #ee4d2d;
+            --cor-verde: #00bfa5;
+            --cor-vermelho: #ef5350;
+            --cor-azul: #2979ff;
+            --cor-laranja: #fb8c00; 
+            --cor-cupom: #7e57c2;   
+            --cor-fundo: #f4f7f6;
+            --cor-texto: #333;
+            --cor-texto-claro: #666;
+            --cor-branco: #ffffff;
+            --sombra: 0 4px 12px rgba(0,0,0,0.05);
+            --border-color: #f0f0f0;
+            --input-bg: #fcfcfc;
+        }
+
+        /* === TEMA ESCURO === */
+        html.dark-mode {
+            --cor-fundo: #121212;
+            --cor-branco: #1E1E1E;
+            --cor-texto: #E0E0E0;
+            --cor-texto-claro: #888;
+            --sombra: 0 4px 12px rgba(0,0,0,0.3);
+            --border-color: #333;
+            --input-bg: #2C2C2C;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--cor-fundo);
+            color: var(--cor-texto);
+            margin: 0;
+            padding: 20px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        #app-content { display: none; }
+        
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--cor-branco);
+            padding: 10px 25px;
+            border-radius: 12px;
+            box-shadow: var(--sombra);
+            margin-bottom: 20px;
+        }
+        .navbar h1 { color: var(--cor-primaria); margin: 0; font-size: 1.6em; }
+        .navbar .nav-links { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+        .navbar .nav-links a {
+            text-decoration: none;
+            color: var(--cor-texto-claro);
+            font-weight: 600;
+            font-size: 0.95em;
+            transition: color 0.2s;
+        }
+        .navbar .nav-links a:hover, .navbar .nav-links a.active {
+            color: var(--cor-azul);
+        }
+        .navbar button.logout-btn {
+            background-color: var(--cor-vermelho);
+            color: white; border: none; padding: 8px 14px;
+            border-radius: 8px; cursor: pointer; font-weight: 600;
+        }
+
+        /* Botão de Tema */
+        .icon-btn {
+            background: none;
+            border: none;
+            color: var(--cor-texto-claro);
+            font-size: 22px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        html.dark-mode .theme-toggle-btn {
+            color: var(--cor-amarelo);
+        }
+        
+        /* Filtro */
+        .filter-bar {
+            display: flex; flex-wrap: wrap; gap: 15px;
+            background-color: var(--cor-branco);
+            padding: 15px 20px; border-radius: 12px;
+            margin-bottom: 20px; box-shadow: var(--sombra);
+            align-items: center;
+        }
+        .filter-bar label { font-weight: 600; color: var(--cor-texto-claro); }
+        .filter-bar select {
+            padding: 10px; border-radius: 8px; border: 1px solid var(--border-color);
+            font-size: 1em; background-color: var(--input-bg);
+            color: var(--cor-texto);
+        }
+
+        .table-container {
+            background-color: var(--cor-branco);
+            border-radius: 12px;
+            box-shadow: var(--sombra);
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 14px 18px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        th {
+            background-color: #fcfcfc;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            color: var(--cor-texto-claro);
+        }
+        html.dark-mode th {
+            background-color: #252525;
+        }
+
+        tbody tr {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        tbody tr:hover {
+            background-color: #f8f8f8;
+        }
+        html.dark-mode tbody tr:hover {
+            background-color: #2a2a2a;
+        }
+        .valor-bruto { color: var(--cor-texto-claro); }
+        .valor-custo { color: var(--cor-vermelho); }
+        .valor-cupom { color: var(--cor-cupom); }
+        .valor-lucro { color: var(--cor-verde); font-weight: 600; }
+        .edited-icon {
+            font-size: 0.8em;
+            color: var(--cor-texto-claro);
+            opacity: 0.7;
+            margin-left: 5px;
+        }
+
+        /* Modal de Edição */
+        .modal {
+            display: none; 
+            position: fixed; z-index: 1000;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center; align-items: center;
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        .modal-content {
+            background-color: var(--cor-branco);
+            color: var(--cor-texto);
+            padding: 25px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .modal-header h3 { margin: 0; font-size: 1.5em; }
+        .modal-header .close-btn {
+            font-size: 2.5em; font-weight: bold; color: #aaa;
+            cursor: pointer; line-height: 0.5;
+        }
+        
+        .modal-body form label {
+            display: block; margin-top: 15px; font-weight: 600; font-size: 0.9em;
+            color: var(--cor-texto-claro);
+        }
+        .modal-body form input, .modal-body form select {
+            width: 100%; padding: 12px; margin-top: 5px;
+            border: 1px solid var(--border-color);
+            background-color: var(--input-bg);
+            color: var(--cor-texto);
+            border-radius: 8px; box-sizing: border-box; 
+            font-size: 1em;
+        }
+        .modal-body form input[readonly] {
+            background-color: #eee;
+            color: #777;
+        }
+        html.dark-mode .modal-body form input[readonly] {
+            background-color: #2a2a2a;
+            color: #aaa;
+        }
+        
+        .modal-body form .input-group {
+            display: flex;
+            gap: 10px;
+        }
+        .modal-body form .input-group .col {
+            flex: 1;
+        }
+        
+        /* Resumo da Edição */
+        #edit-resumo {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border-color);
+        }
+        #edit-resumo p {
+            display: flex;
+            justify-content: space-between;
+            font-size: 1em;
+            margin: 5px 0;
+        }
+        #edit-resumo p span {
+            color: var(--cor-texto-claro);
+        }
+        #edit-resumo p strong {
+            font-size: 1.1em;
+        }
+        #edit-resumo p strong.bruto { color: var(--cor-texto-claro); }
+        #edit-resumo p strong.custo { color: var(--cor-vermelho); }
+        #edit-resumo p strong.cupom { color: var(--cor-cupom); }
+        #edit-resumo p strong.liquido { color: var(--cor-verde); font-size: 1.4em; }
+
+        .modal-footer {
+            margin-top: 25px;
+            display: flex;
+            justify-content: space-between; 
+            gap: 10px;
+        }
+        .modal-footer button {
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.95em;
+        }
+        #modal-delete-btn { background-color: var(--cor-vermelho); color: white; }
+        #modal-save-btn { background-color: var(--cor-verde); color: white; }
+
+        /* Feedback Modal */
+        #feedback-modal .modal-content { max-width: 350px; text-align: center; }
+        #feedback-modal .icon { font-size: 3.5em; }
+        #feedback-modal .success { color: var(--cor-verde); }
+        #feedback-modal .error { color: var(--cor-vermelho); }
+        #feedback-modal p { font-size: 1.2em; font-weight: 600; margin: 10px 0 0; }
+        
+        @media (max-width: 600px) {
+            .filter-bar { flex-direction: column; align-items: stretch; }
+            .modal-body form .input-group { flex-direction: column; gap: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-content">
+        <nav class="navbar">
+            <h1>Lançamentos</h1>
+            <div class="nav-links">
+                <a href="index.html">Dashboard</a>
+                <a href="vendas.html" class="active"><b>Lançamentos de Vendas</b></a>
+                <a href="gastos.html">Lançamentos de Gastos</a>
+                <a href="produtos.html">Gerenciar Produtos</a>
+                <button class="icon-btn theme-toggle-btn" id="theme-toggle" title="Mudar tema">☀️</button>
+                <button id="logout-btn" class="logout-btn">Sair</button>
+            </div>
+        </nav>
+        
+        <div class="filter-bar">
+            <label for="filter-month">Mês:</label>
+            <select id="filter-month"></select>
+            <label for="filter-year">Ano:</label>
+            <select id="filter-year"></select>
+            <label for="filter-product">Produto:</label>
+            <select id="filter-product"></select>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Cliente</th>
+                        <th>Produto</th>
+                        <th>Qtd.</th>
+                        <th>V. Bruto</th>
+                        <th>Taxa Shopee (R$)</th> <th>Cupom (R$)</th>
+                        <th>Lucro (R$)</th>
+                    </tr>
+                </thead>
+                <tbody id="details-table-body">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="details-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Editar Venda</h3>
+                <span class="close-btn">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="edit-form">
+                    <input type="hidden" id="edit-id">
+                    
+                    <label for="edit-data">Data da Venda:</label>
+                    <input type="date" id="edit-data" required>
+                    
+                    <label for="edit-produto">Produto Vendido:</label>
+                    <select id="edit-produto" required>
+                        <option value="">Carregando produtos...</option>
+                    </select>
+
+                    <label for="edit-cliente">Nome do Cliente:</label>
+                    <input type="text" id="edit-cliente" required>
+                    
+                    <div class="input-group">
+                        <div class="col">
+                            <label for="edit-preco-venda">Preço de Venda (R$):</label>
+                            <input type="number" id="edit-preco-venda" step="0.01" required>
+                        </div>
+                        <div class="col">
+                            <label for="edit-quantidade">Quantidade:</label>
+                            <input type="number" id="edit-quantidade" step="1" required>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <div class="col">
+                            <label for="edit-taxa">Taxa Shopee (R$):</label>
+                            <input type="number" id="edit-taxa" step="0.01" required placeholder="Ex: 7.20">
+                        </div>
+                        <div class="col">
+                            <label for="edit-cupom">Cupom (R$):</label>
+                            <input type="number" id="edit-cupom" step="0.01" placeholder="Ex: 0.00">
+                        </div>
+                    </div>
+
+                    <div id="edit-resumo">
+                        <p><span>Total Bruto:</span> <strong class="bruto" id="edit-total-bruto">R$ 0,00</strong></p>
+                        <p><span>Taxa Shopee:</span> <strong class="custo" id="edit-total-taxa">- R$ 0,00</strong></p>
+                        <p><span>Cupom:</span> <strong class="cupom" id="edit-total-cupom">- R$ 0,00</strong></p>
+                        <p><span>LUCRO LÍQUIDO:</span> <strong class="liquido" id="edit-lucro-liquido">R$ 0,00</strong></p>
+                    </div>
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button id="modal-delete-btn">Excluir Venda</button>
+                <button id="modal-save-btn">Salvar Alterações</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="feedback-modal" class="modal">
+        <div class="modal-content">
+            <div id="feedback-icon" class="icon"></div>
+            <p id="feedback-message"></p>
+        </div>
+    </div>
+
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+        import { 
+            getFirestore, collection, onSnapshot, 
+            query, orderBy, doc, deleteDoc, updateDoc,
+            where, Timestamp, serverTimestamp, setDoc
+        } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+
+        // SUA CONFIGURAÇÃO (NÃO MUDE)
+        const firebaseConfig = {
+          apiKey: "AIzaSyCKtzcbDA5y0mGqo2UdYdinf44adGEhnPA",
+          authDomain: "dashboard-shopee.firebaseapp.com",
+          projectId: "dashboard-shopee",
+          storageBucket: "dashboard-shopee.firebasestorage.app",
+          messagingSenderId: "221610244041",
+          appId: "1:221610244041:web:dcd4f817ea3f76ff029a18"
+        };
+        
+        // Inicialização
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- Variáveis Globais ---
+        let currentUserId = null;
+        let localVendasCache = [];
+        let produtosCache = [];
+        let unsubscribeVendas = null;
+        let unsubscribeProdutos = null;
+        const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
+        // --- Elementos da UI ---
+        const appContent = document.getElementById("app-content");
+        const tableBody = document.getElementById("details-table-body");
+        const detailsModal = document.getElementById("details-modal");
+        const modalDeleteBtn = document.getElementById("modal-delete-btn");
+        const modalSaveBtn = document.getElementById("modal-save-btn");
+        const filterMonth = document.getElementById("filter-month");
+        const filterYear = document.getElementById("filter-year");
+        const filterProduct = document.getElementById("filter-product"); // MUDANÇA 5: Novo elemento
+        
+        // MUDANÇA 6: Elementos do Modal de Edição atualizados
+        const selectProdutoEdit = document.getElementById("edit-produto");
+        const inputPrecoVendaEdit = document.getElementById("edit-preco-venda");
+        const inputTaxaEdit = document.getElementById("edit-taxa"); 
+        const inputQuantidadeEdit = document.getElementById("edit-quantidade");
+        const inputCupomEdit = document.getElementById("edit-cupom");
+        
+        const spanTotalBrutoEdit = document.getElementById("edit-total-bruto");
+        const spanTotalTaxaEdit = document.getElementById("edit-total-taxa"); 
+        const spanTotalCupomEdit = document.getElementById("edit-total-cupom");
+        const spanLucroLiquidoEdit = document.getElementById("edit-lucro-liquido");
+
+        // --- Lógica de UI (Feedback) ---
+        const feedbackModal = document.getElementById("feedback-modal");
+        const feedbackIcon = document.getElementById("feedback-icon");
+        const feedbackMessage = document.getElementById("feedback-message");
+
+        function showFeedback(message, type = 'success', duration = 2000) {
+            feedbackMessage.textContent = message;
+            feedbackIcon.className = `icon ${type}`;
+            feedbackIcon.innerHTML = type === 'success' ? "✅" : "❌";
+            feedbackModal.style.display = "flex";
+            setTimeout(() => { feedbackModal.style.display = "none"; }, duration);
+        }
+
+        // --- Lógica de Formatação ---
+        function formatarMoeda(valor) {
+            return (valor || 0).toLocaleString('pt-br', { style: 'currency', currency: 'BRL' });
+        }
+        function formatarData(timestamp) {
+            if (!timestamp) return 'N/A';
+            return timestamp.toDate().toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+        }
+        function timestampParaInputDate(timestamp) {
+            const date = timestamp.toDate();
+            const dateUTC = new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+            return dateUTC.toISOString().split('T')[0];
+        }
+        function inputDateParaTimestamp(dateString) {
+            const dataObj = new Date(dateString);
+            const dataUtc = new Date(dataObj.getTime() + dataObj.getTimezoneOffset() * 60000);
+            return Timestamp.fromDate(dataUtc);
+        }
+
+        // --- Lógica de UI (Filtros) ---
+        function popularFiltros() {
+            const hoje = new Date();
+            const mesAtual = hoje.getMonth();
+            const anoAtual = hoje.getFullYear();
+            
+            filterMonth.add(new Option("Todos os Meses", "all"));
+            meses.forEach((mes, index) => {
+                const option = new Option(mes, index);
+                if(index === mesAtual) option.selected = true;
+                filterMonth.add(option);
+            });
+            
+            for (let ano = anoAtual + 1; ano >= 2020; ano--) {
+                const option = new Option(ano, ano);
+                if(ano === anoAtual) option.selected = true;
+                filterYear.add(option);
+            }
+            
+            filterMonth.addEventListener("change", carregarTodasAsVendas);
+            filterYear.addEventListener("change", carregarTodasAsVendas);
+            filterProduct.addEventListener("change", aplicarFiltrosEExibir); // MUDANÇA 7: Listener para filtro de produto
+        }
+
+        // --- Lógica de Autenticação (Auth Guard) ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                appContent.style.display = "block";
+                popularFiltros();
+                carregarProdutos(); 
+                carregarTodasAsVendas(); 
+            } else {
+                window.location.href = "./login.html"; 
+            }
+        });
+
+        // --- Lógica de Logout ---
+        document.getElementById("logout-btn").addEventListener("click", () => signOut(auth));
+        
+        // MUDANÇA 8: Carregar Produtos (agora também popula o filtro)
+        function carregarProdutos() {
+            const produtosRef = collection(db, "usuarios", currentUserId, "produtos");
+            const qProdutos = query(produtosRef, orderBy("nome"));
+            
+            if (unsubscribeProdutos) unsubscribeProdutos();
+            
+            unsubscribeProdutos = onSnapshot(qProdutos, (snapshot) => {
+                produtosCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                selectProdutoEdit.innerHTML = '<option value="">Selecione um produto</option>';
+                filterProduct.innerHTML = '<option value="all">Todos os Produtos</option>'; // Popula filtro
+                
+                produtosCache.forEach(prod => {
+                    // Popula o select do Modal
+                    const optionModal = new Option(`${prod.nome} (${formatarMoeda(prod.precoVenda)})`, prod.id);
+                    optionModal.dataset.nome = prod.nome;
+                    optionModal.dataset.preco = prod.precoVenda || 0; 
+                    optionModal.dataset.taxa = prod.taxaShopeePadrao || 0; // Puxa a taxa
+                    selectProdutoEdit.add(optionModal);
+
+                    // Popula o select do Filtro
+                    const optionFiltro = new Option(prod.nome, prod.id);
+                    filterProduct.add(optionFiltro);
+                });
+            });
+        }
+
+        // --- Lógica Principal de Dados ---
+        function carregarTodasAsVendas() {
+            if (unsubscribeVendas) unsubscribeVendas();
+
+            const mes = filterMonth.value;
+            const ano = parseInt(filterYear.value);
+            const vendasRef = collection(db, "usuarios", currentUserId, "vendas");
+            let qVendas;
+
+            if (mes === "all") {
+                const inicioDoAno = Timestamp.fromDate(new Date(ano, 0, 1));
+                const fimDoAno = Timestamp.fromDate(new Date(ano, 11, 31, 23, 59, 59));
+                qVendas = query(vendasRef,
+                    where("data", ">=", inicioDoAno),
+                    where("data", "<=", fimDoAno),
+                    orderBy("data", "desc")
+                );
+            } else {
+                const mesInt = parseInt(mes);
+                const inicioDoMes = Timestamp.fromDate(new Date(ano, mesInt, 1));
+                const fimDoMes = Timestamp.fromDate(new Date(ano, mesInt + 1, 0, 23, 59, 59));
+                qVendas = query(vendasRef,
+                    where("data", ">=", inicioDoMes),
+                    where("data", "<=", fimDoMes),
+                    orderBy("data", "desc")
+                );
+            }
+
+            unsubscribeVendas = onSnapshot(qVendas, (snapshot) => {
+                localVendasCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                aplicarFiltrosEExibir(); // MUDANÇA 9: Chama a função de filtro
+            });
+        }
+        
+        // MUDANÇA 10: Nova função para filtrar e renderizar
+        function aplicarFiltrosEExibir() {
+            const produtoId = filterProduct.value;
+            let vendasFiltradas = [...localVendasCache];
+
+            if (produtoId !== "all") {
+                vendasFiltradas = vendasFiltradas.filter(venda => venda.produtoId === produtoId);
+            }
+
+            renderizarTabela(vendasFiltradas);
+        }
+
+
+        function renderizarTabela(vendas) {
+            tableBody.innerHTML = "";
+            
+            if (vendas.length === 0) {
+                // MUDANÇA 11: Colspan atualizado para 8
+                tableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 20px; color: ${document.documentElement.classList.contains('dark-mode') ? '#888' : '#999'};">Nenhuma venda encontrada.</td></tr>`;
+                return;
+            }
+
+            vendas.forEach(item => {
+                const tr = document.createElement("tr");
+                tr.dataset.id = item.id;
+                
+                const iconeEditado = item.editadoEm ? ` <span class="edited-icon" title="Editado em ${formatarData(item.editadoEm)}">✏️</span>` : '';
+
+                // MUDANÇA 12: Renderização da tabela (sem Custo Material)
+                tr.innerHTML = `
+                    <td>${formatarData(item.data)}${iconeEditado}</td>
+                    <td>${item.nomeCliente || 'N/A'}</td>
+                    <td>${item.produtoNome || 'N/A'}</td>
+                    <td>${item.quantidade || 1}</td>
+                    <td class="valor-bruto">+ ${formatarMoeda(item.valorBruto)}</td>
+                    <td class="valor-custo">- ${formatarMoeda(item.valorTaxa || 0)}</td>
+                    <td class="valor-cupom">- ${formatarMoeda(item.valorCupom)}</td>
+                    <td class="valor-lucro">= ${formatarMoeda(item.valorLucroVenda)}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        // --- Lógica do Modal de Edição ---
+        
+        // MUDANÇA 13: Lógica de cálculo do modal
+        function calcularTotalEdicao() {
+            const precoVenda = parseFloat(inputPrecoVendaEdit.value) || 0;
+            const taxaUnitario = parseFloat(inputTaxaEdit.value) || 0;
+            // Custo Material REMOVIDO
+            const cupom = parseFloat(inputCupomEdit.value) || 0;
+            const qtd = parseInt(inputQuantidadeEdit.value) || 1;
+            
+            const bruto = precoVenda * qtd;
+            const taxaTotal = taxaUnitario * qtd;
+            const cupomTotal = cupom; 
+            
+            const lucro = bruto - taxaTotal - cupomTotal;
+
+            spanTotalBrutoEdit.textContent = formatarMoeda(bruto);
+            spanTotalTaxaEdit.textContent = `- ${formatarMoeda(taxaTotal)}`;
+            // spanTotalMaterialEdit REMOVIDO
+            spanTotalCupomEdit.textContent = `- ${formatarMoeda(cupomTotal)}`;
+            spanLucroLiquidoEdit.textContent = formatarMoeda(lucro);
+        }
+        
+        // Ao mudar o produto no modal de EDIÇÃO
+        selectProdutoEdit.addEventListener("change", (e) => {
+            const selected = e.target.options[e.target.selectedIndex];
+            inputPrecoVendaEdit.value = parseFloat(selected.dataset.preco || 0);
+            inputTaxaEdit.value = parseFloat(selected.dataset.taxa || 0); // Puxa a Taxa
+            calcularTotalEdicao();
+        });
+        
+        // MUDANÇA 14: Listeners atualizados
+        inputPrecoVendaEdit.addEventListener("input", calcularTotalEdicao);
+        inputQuantidadeEdit.addEventListener("input", calcularTotalEdicao);
+        inputTaxaEdit.addEventListener("input", calcularTotalEdicao);
+        inputCupomEdit.addEventListener("input", calcularTotalEdicao);
+
+        // Abrir o modal
+        tableBody.addEventListener("click", (e) => {
+            const row = e.target.closest("tr");
+            if (!row || !row.dataset.id) return;
+            
+            const id = row.dataset.id;
+            const item = localVendasCache.find(t => t.id === id);
+            
+            if (!item) return;
+            
+            // MUDANÇA 15: Preenche campos (sem Custo Material)
+            document.getElementById("edit-id").value = item.id;
+            document.getElementById("edit-data").value = timestampParaInputDate(item.data);
+            document.getElementById("edit-produto").value = item.produtoId || "";
+            document.getElementById("edit-cliente").value = item.nomeCliente || "";
+            document.getElementById("edit-preco-venda").value = item.valorBruto / (item.quantidade || 1); 
+            document.getElementById("edit-quantidade").value = item.quantidade || 1;
+            document.getElementById("edit-taxa").value = (item.valorTaxa || 0) / (item.quantidade || 1); // Taxa unitária
+            document.getElementById("edit-cupom").value = item.valorCupom || 0;
+            
+            calcularTotalEdicao(); 
+            
+            modalDeleteBtn.dataset.id = item.id;
+            detailsModal.style.display = "flex";
+        });
+
+        function fecharModal() {
+            detailsModal.style.display = "none";
+        }
+        document.querySelector("#details-modal .close-btn").addEventListener("click", fecharModal);
+        window.addEventListener("click", (e) => {
+            if (e.target === detailsModal) {
+                fecharModal();
+            }
+        });
+
+        // MUDANÇA 16: Salvar Edições (sem Custo Material)
+        modalSaveBtn.addEventListener("click", async () => {
+            const id = document.getElementById("edit-id").value;
+            const docRef = doc(db, "usuarios", currentUserId, "vendas", id);
+            
+            const select = document.getElementById("edit-produto");
+            const selectedOption = select.options[select.selectedIndex];
+            
+            const precoVenda = parseFloat(inputPrecoVendaEdit.value);
+            const taxaUnitario = parseFloat(inputTaxaEdit.value);
+            const cupom = parseFloat(inputCupomEdit.value) || 0;
+            const qtd = parseInt(inputQuantidadeEdit.value);
+            
+            const bruto = precoVenda * qtd;
+            const taxaTotal = taxaUnitario * qtd;
+            const cupomTotal = cupom;
+            const custoTotal = taxaTotal; // Custo total da venda é só a taxa
+            const lucroDaVenda = bruto - custoTotal - cupomTotal;
+            
+            const dadosAtualizados = {
+                data: inputDateParaTimestamp(document.getElementById("edit-data").value),
+                produtoId: selectedOption.value,
+                produtoNome: selectedOption.dataset.nome || "",
+                nomeCliente: document.getElementById("edit-cliente").value,
+                quantidade: qtd,
+                valorBruto: bruto,
+                valorCupom: cupomTotal,
+                custoTotal: custoTotal, // (Apenas Taxa)
+                valorTaxa: taxaTotal, // Salva taxa separada
+                custoInsumo: 0, // Salva 0 para compatibilidade
+                valorLucroVenda: lucroDaVenda,
+                editadoEm: serverTimestamp() 
+            };
+
+            try {
+                await updateDoc(docRef, dadosAtualizados);
+                fecharModal();
+                showFeedback("Venda atualizada com sucesso!", "success");
+            } catch (error) {
+                console.error("Erro ao atualizar:", error);
+                showFeedback("Erro ao atualizar.", "error");
+            }
+        });
+
+        // Excluir
+        modalDeleteBtn.addEventListener("click", async (e) => {
+            const id = e.target.dataset.id;
+            
+            if (confirm("Tem certeza que deseja excluir esta venda? Esta ação é irreversível.")) {
+                try {
+                    const docRef = doc(db, "usuarios", currentUserId, "vendas", id);
+                    await deleteDoc(docRef);
+                    fecharModal();
+                    showFeedback("Venda excluída!", "success");
+                } catch (error) {
+                    showFeedback("Erro ao excluir.", "error");
+                }
+            }
+        });
+        
+        // --- Lógica de UI (Theme Toggle) ---
+        const themeToggle = document.getElementById("theme-toggle");
+        
+        function setIcon(theme) {
+             if (theme === 'dark') {
+                themeToggle.innerHTML = "☀️"; // Sol
+             } else {
+                themeToggle.innerHTML = "🌙"; // Lua
+             }
+        }
+        setIcon('dark'); 
+
+        themeToggle.addEventListener("click", () => {
+            const isDarkMode = document.documentElement.classList.toggle("dark-mode");
+            const theme = isDarkMode ? "dark" : "light";
+            localStorage.setItem("theme", theme);
+            setIcon(theme);
+        });
+
+    </script>
+</body>
+</html>
