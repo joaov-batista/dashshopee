@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Financeiro</title>
-    <link rel="icon" type="image/png" href="favicon.png"> 
+    <link rel="icon" type="image/png" href="logo.png"> 
     
     <style>
         :root {
@@ -128,7 +128,6 @@
             background: var(--cor-branco);
             padding: 25px; border-radius: 12px; box-shadow: var(--sombra);
         }
-        /* MUDANÇA 1: KPI Clicável */
         .kpi.kpi-clicavel {
             cursor: pointer;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -433,11 +432,11 @@
         #feedback-modal .error { color: var(--cor-vermelho); }
         #feedback-modal p { font-size: 1.2em; font-weight: 600; margin: 10px 0 0; }
 
-        /* MUDANÇA 2: CSS para os novos modais */
+        /* CSS para os novos modais */
         .modal-footer {
             margin-top: 25px;
             display: flex;
-            justify-content: flex-end; /* Botão à direita */
+            justify-content: flex-end; 
         }
         .btn-detalhes {
             background-color: var(--cor-azul);
@@ -738,7 +737,6 @@
         let totalCuponsGlobal = 0;
         let gastosPorCategoriaGlobal = {};
         
-        // MUDANÇA 6: Nomes de exibição para gráficos e resumos
         const nomesExibicao = {
             'material': 'Material',
             'ads': 'Anúncios',
@@ -764,7 +762,6 @@
         const metaCard = document.getElementById("kpi-meta-card");
         const metaButton = document.getElementById("open-meta-modal-btn");
         
-        // MUDANÇA 7: Novos elementos dos modais e KPIs
         const kpiCardVendas = document.getElementById("kpi-card-vendas");
         const kpiCardDespesas = document.getElementById("kpi-card-despesas");
         const resumoVendasBody = document.getElementById("resumo-vendas-body");
@@ -879,7 +876,6 @@
                 carregarDadosDashboard();
                 carregarProdutos();
 
-                // MUDANÇA 8: Adicionar listeners de clique nos KPIs
                 kpiCardVendas.addEventListener("click", () => openModal("modal-resumo-vendas"));
                 kpiCardDespesas.addEventListener("click", () => openModal("modal-resumo-despesas"));
             } else {
@@ -979,7 +975,7 @@
                 totalTaxasGlobal = 0;
                 totalCuponsGlobal = 0;
                 ultimasVendas = [];
-                let produtosVendidos = {}; // MUDANÇA 9: Objeto para Top 3
+                let produtosVendidos = {}; 
 
                 snapshot.docs.forEach(doc => {
                     const venda = doc.data();
@@ -989,15 +985,13 @@
                     totalCuponsGlobal += venda.valorCupom || 0;
                     ultimasVendas.push({ tipo: 'venda', ...venda });
 
-                    // MUDANÇA 10: Lógica para calcular Top 3
                     const nome = venda.produtoNome || 'Desconhecido';
                     const qtd = venda.quantidade || 1;
                     produtosVendidos[nome] = (produtosVendidos[nome] || 0) + qtd;
                 });
                 
-                // MUDANÇA 11: Processar e renderizar Top 3
                 const top3Produtos = Object.entries(produtosVendidos)
-                                         .sort((a, b) => b[1] - a[1]) // Ordena por quantidade
+                                         .sort((a, b) => b[1] - a[1]) 
                                          .slice(0, 3);
                 renderizarResumoVendas(top3Produtos);
 
@@ -1021,7 +1015,6 @@
                     gastosPorCategoriaGlobal[cat] = (gastosPorCategoriaGlobal[cat] || 0) + gasto.valor;
                 });
                 
-                // MUDANÇA 12: Renderizar resumo de despesas
                 renderizarResumoDespesas(gastosPorCategoriaGlobal);
 
                 atualizarKPIs();
@@ -1108,18 +1101,18 @@
             }
         }
         
-        // --- LÓGICA DO GRÁFICO ---
+        // MUDANÇA 17: Lógica do Gráfico (REMOVIDO Taxas Shopee)
         function atualizarGraficoCustos() {
             const custosGrafico = { ...gastosPorCategoriaGlobal };
             
-            if (totalTaxasGlobal > 0) custosGrafico['Taxas Shopee'] = totalTaxasGlobal;
+            // if (totalTaxasGlobal > 0) custosGrafico['Taxas Shopee'] = totalTaxasGlobal; // REMOVIDO
             if (totalCuponsGlobal > 0) custosGrafico['Cupons'] = totalCuponsGlobal;
             
-            // Custo de material (custoInsumo) não é mais somado aqui.
-            // Ele já está dentro de gastosPorCategoriaGlobal['material']
-
+            // A categoria 'material' das despesas já inclui o custo do material
+            
+            // Filtra para manter apenas as categorias de interesse
             const categoriasFinais = {};
-            const categoriasInteresse = ['material', 'ads', 'Cupons', 'Taxas Shopee'];
+            const categoriasInteresse = ['material', 'ads', 'Cupons']; // REMOVIDO 'Taxas Shopee'
             let outrosValor = 0;
 
             for (const cat in custosGrafico) {
@@ -1153,12 +1146,20 @@
 
             const maxValor = Math.max(...valores);
             
+            // MUDANÇA 18: Cores (REMOVIDO Taxas Shopee)
             const cores = {
-                'Taxas Shopee': 'var(--cor-laranja)', 
                 'ads': 'var(--cor-azul)', 
                 'material': 'var(--cor-material)', 
                 'Cupons': 'var(--cor-cupom)',
                 'Outros': 'var(--cor-texto-claro)', 
+            };
+            
+            // MUDANÇA 19: Nomes de exibição (REMOVIDO Taxas Shopee)
+            const nomesExibicaoGrafico = {
+                'material': 'Material',
+                'ads': 'Anúncios',
+                'Cupons': 'Cupons',
+                'Outros': 'Outros'
             };
 
             const sortedCategorias = Object.entries(categoriasFiltradas).sort((a, b) => b[1] - a[1]);
@@ -1174,7 +1175,7 @@
                 bar.className = "bar";
                 bar.style.height = "0px"; 
                 bar.style.backgroundColor = cor; 
-                bar.title = `${nomesExibicao[categoria] || categoria}: ${formatarMoeda(valor)}`; 
+                bar.title = `${nomesExibicaoGrafico[categoria] || categoria}: ${formatarMoeda(valor)}`; 
                 
                 const valueSpan = document.createElement("span");
                 valueSpan.className = "bar-value";
@@ -1182,7 +1183,7 @@
                 
                 const label = document.createElement("span");
                 label.className = "label";
-                label.textContent = nomesExibicao[categoria] || categoria;
+                label.textContent = nomesExibicaoGrafico[categoria] || categoria;
                 
                 barWrapper.appendChild(valueSpan); 
                 barWrapper.appendChild(bar);
@@ -1196,7 +1197,7 @@
         }
         // --- FIM DA LÓGICA DO GRÁFICO ---
 
-        // MUDANÇA 13: Novas funções para renderizar resumos dos modais
+        // --- Lógica dos Modais de Resumo ---
         function renderizarResumoVendas(top3) {
             if (top3.length === 0) {
                 resumoVendasBody.innerHTML = `<p style='text-align: center; color: var(--cor-texto-claro);'>Nenhuma venda registrada neste período.</p>`;
@@ -1243,7 +1244,6 @@
             return Timestamp.fromDate(dataUtc);
         }
         
-        // MUDANÇA 14: Lógica de cálculo do modal de venda
         function calcularTotalVenda() {
             const precoVenda = parseFloat(inputPrecoVenda.value) || 0;
             const taxa = parseFloat(inputTaxa.value) || 0;
@@ -1274,7 +1274,6 @@
         inputTaxa.addEventListener("input", calcularTotalVenda); 
         inputCupom.addEventListener("input", calcularTotalVenda);
 
-        // MUDANÇA 15: Enviar VENDA (lógica de custo corrigida)
         document.getElementById("form-venda").addEventListener("submit", async (e) => {
             e.preventDefault();
             const select = selectProdutoVenda;
@@ -1303,8 +1302,8 @@
                 quantidade: qtd,
                 valorBruto: bruto,       
                 valorTaxa: taxaTotal, 
-                custoInsumo: 0, // Custo de material NÃO é salvo na venda
-                custoTotal: taxaTotal, // Custo total da venda é SÓ a taxa
+                custoInsumo: 0, 
+                custoTotal: taxaTotal, 
                 valorCupom: cupomTotal, 
                 valorLucroVenda: lucroDaVenda, 
                 criadoEm: serverTimestamp()
